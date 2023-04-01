@@ -4,6 +4,7 @@ import { User } from './entities/user.entity';
 import { InsertResult, Repository } from 'typeorm';
 import { RegisterDto } from 'src/auth/dto/register.dto';
 import { UpdateProfileDto } from 'src/profile/dto/update-profile.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -36,6 +37,14 @@ export class UserService {
     await this.userRepository.update(user.id, {
       description: updateProfileDto.description,
       display_name: updateProfileDto.display_name
+    });
+    return this.findOneById(user.id);
+  }
+
+  async updatePassword(user: User, newPassword: string) {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.update(user.id, {
+      password: hashedPassword
     });
     return this.findOneById(user.id);
   }
