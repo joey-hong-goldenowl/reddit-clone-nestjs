@@ -11,10 +11,14 @@ export class AuthService {
   constructor(private readonly userService: UserService, private readonly jwtService: JwtService, private readonly configService: ConfigService) {}
 
   async register(registerDto: RegisterDto): Promise<User> {
-    const { email } = registerDto;
-    const user = await this.userService.findOneByEmail(email);
-    if (user) {
+    const { email, username } = registerDto;
+    const userWithSameEmail = await this.userService.findOneByEmail(email);
+    if (userWithSameEmail) {
       throw new BadRequestException('Email address is already in use');
+    }
+    const userWithSameUsername = await this.userService.findOneByUsername(username);
+    if (userWithSameUsername) {
+      throw new BadRequestException('Username is already in use');
     }
     await this.userService.create(registerDto);
     const newUser = await this.userService.findOneByEmail(email);
