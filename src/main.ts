@@ -1,5 +1,6 @@
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -9,6 +10,7 @@ async function bootstrap() {
     type: VersioningType.URI,
     defaultVersion: '1'
   });
+  app.use(cookieParser());
   await app.listen(3000);
 }
 bootstrap();
