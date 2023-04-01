@@ -1,10 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
+import { InsertResult, Repository } from 'typeorm';
+import { RegisterDto } from 'src/auth/dto/register.dto';
 
 @Injectable()
 export class UserService {
@@ -13,19 +12,12 @@ export class UserService {
     private userRepository: Repository<User>
   ) {}
 
-  async create(createUserDto: CreateUserDto) {
-    const { email, password } = createUserDto;
-    const user = await this.userRepository.findOneBy({ email });
-    if (user) {
-      throw new BadRequestException('Email address is already in use');
-    }
-    const hashedPassword = await bcrypt.hash(password, 10);
+  async create(registerDto: RegisterDto): Promise<InsertResult> {
     const newUser = this.userRepository.create({
-      ...createUserDto,
-      password: hashedPassword
+      ...registerDto,
+      display_name: registerDto.username
     });
-    await this.userRepository.insert(newUser);
-    return newUser;
+    return this.userRepository.insert(newUser);
   }
 
   findAll() {
@@ -52,9 +44,13 @@ export class UserService {
   async remove(id: number) {
     const removedUser = await this.userRepository.findOneBy({ id });
     if (removedUser) {
-      await this.userRepository.delete({ id })
+      await this.userRepository.delete({ id });
       return { success: true };
     }
     return new NotFoundException('User not found');
+  }
+
+  async findOneByEmail(email: string) {
+    return this.userRepository.findOneBy({ email });
   }
 }
