@@ -16,7 +16,8 @@ export class UserMigration1680234580755 implements MigrationInterface {
           {
             name: 'username',
             type: 'text',
-            isNullable: false
+            isNullable: false,
+            isUnique: true
           },
           {
             name: 'email',
