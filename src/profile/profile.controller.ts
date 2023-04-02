@@ -1,4 +1,5 @@
-import { Body, ClassSerializerInterceptor, Controller, Patch, Request, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Patch, Request, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import JwtAuthGuard from 'src/auth/guards/jwt-auth.guard';
 import ReqWithUser from 'src/auth/interface/req-with-user.interface';
 import { UpdateEmailDto } from './dto/update-email.dto';
@@ -12,9 +13,19 @@ export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'avatar', maxCount: 1 },
+      { name: 'background', maxCount: 1 }
+    ])
+  )
   @Patch('')
-  updateProfile(@Request() req: ReqWithUser, @Body() updateProfileDto: UpdateProfileDto) {
-    return this.profileService.updateProfile(req.user, updateProfileDto);
+  updateProfile(
+    @Request() req: ReqWithUser,
+    @Body() updateProfileDto: UpdateProfileDto,
+    @UploadedFiles() files: { avatar?: Express.Multer.File[]; background?: Express.Multer.File[] }
+  ) {
+    return this.profileService.updateProfile(req.user, updateProfileDto, files.avatar?.[0], files.background?.[0]);
   }
 
   @UseGuards(JwtAuthGuard)

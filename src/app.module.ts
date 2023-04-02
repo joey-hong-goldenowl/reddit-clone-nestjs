@@ -5,6 +5,8 @@ import { DatabaseModule } from './database/database.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { ProfileModule } from './profile/profile.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { AssetModule } from './asset/asset.module';
 
 @Module({
   imports: [
@@ -23,7 +25,9 @@ import { ProfileModule } from './profile/profile.module';
     DatabaseModule,
     UserModule,
     AuthModule,
-    ProfileModule
+    ProfileModule,
+    CloudinaryModule,
+    AssetModule
   ]
 })
 export class AppModule {}

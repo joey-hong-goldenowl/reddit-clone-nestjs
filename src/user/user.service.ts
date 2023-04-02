@@ -26,17 +26,15 @@ export class UserService {
   }
 
   async findOneById(id: number) {
-    const user = await this.userRepository.findOneBy({ id });
-    if (user) {
-      return user;
-    }
-    return new NotFoundException('User not found');
+    return this.userRepository.findOneBy({ id });
   }
 
   async updateProfile(user: User, updateProfileDto: UpdateProfileDto) {
     await this.userRepository.update(user.id, {
       description: updateProfileDto.description,
-      display_name: updateProfileDto.display_name
+      display_name: updateProfileDto.display_name,
+      avatar: updateProfileDto.avatar,
+      background: updateProfileDto.background
     });
     return this.findOneById(user.id);
   }
@@ -63,6 +61,18 @@ export class UserService {
       return { success: true };
     }
     return new NotFoundException('User not found');
+  }
+
+  async removeAvatar(user: User) {
+    await this.userRepository.update(user.id, {
+      avatar: null
+    });
+  }
+
+  async removeBackground(user: User) {
+    await this.userRepository.update(user.id, {
+      background: null
+    });
   }
 
   async findOneByEmail(email: string) {

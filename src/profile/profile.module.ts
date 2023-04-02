@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { AssetModule } from 'src/asset/asset.module';
+import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 import { UserModule } from 'src/user/user.module';
 import { ProfileController } from './profile.controller';
 import { ProfileService } from './profile.service';
@@ -6,6 +8,6 @@ import { ProfileService } from './profile.service';
 @Module({
   controllers: [ProfileController],
   providers: [ProfileService],
-  imports: [UserModule]
+  imports: [UserModule, CloudinaryModule, AssetModule]
 })
 export class ProfileModule {}

@@ -1,5 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { UploadApiResponse } from 'cloudinary';
+import { AssetService } from 'src/asset/asset.service';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { User } from 'src/user/entities/user.entity';
 import { UserService } from 'src/user/user.service';
 import { UpdateEmailDto } from './dto/update-email.dto';
@@ -8,9 +11,75 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class ProfileService {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService, private readonly cloudinaryService: CloudinaryService, private readonly assetService: AssetService) {}
 
-  updateProfile(user: User, updateProfileDto: UpdateProfileDto) {
+  async updateProfile(user: User, updateProfileDto: UpdateProfileDto, avatar: Express.Multer.File, background: Express.Multer.File) {
+    const { delete_avatar = false, delete_background = false } = updateProfileDto;
+    if (delete_avatar) {
+      const asset_id = user.avatar.id;
+      await this.cloudinaryService.deleteImage({
+        image_url: user.avatar.url,
+        user_id: user.id
+      });
+      await this.userService.removeAvatar(user);
+      await this.assetService.delete(asset_id);
+    } else if (avatar) {
+      const uploadedAvatar = await this.cloudinaryService.uploadImage({
+        user_id: user.id,
+        file: avatar
+      });
+      const { secure_url } = uploadedAvatar as UploadApiResponse;
+
+      if (user.avatar) {
+        await this.cloudinaryService.deleteImage({
+          image_url: user.avatar.url,
+          user_id: user.id
+        });
+        await this.assetService.update(user.avatar.id, {
+          url: secure_url,
+          type: 'image'
+        });
+      } else {
+        const avatarAsset = await this.assetService.create({
+          url: secure_url,
+          type: 'image'
+        });
+        updateProfileDto.avatar = avatarAsset;
+      }
+    }
+    if (delete_background) {
+      const asset_id = user.background.id;
+      console.log('url', user.background.url);
+      await this.cloudinaryService.deleteImage({
+        image_url: user.background.url,
+        user_id: user.id
+      });
+      await this.userService.removeBackground(user);
+      await this.assetService.delete(asset_id);
+    } else if (background) {
+      const uploadedBackground = await this.cloudinaryService.uploadImage({
+        user_id: user.id,
+        file: background
+      });
+      const { secure_url } = uploadedBackground as UploadApiResponse;
+
+      if (user.background) {
+        await this.cloudinaryService.deleteImage({
+          image_url: user.background.url,
+          user_id: user.id
+        });
+        await this.assetService.update(user.background.id, {
+          url: secure_url,
+          type: 'image'
+        });
+      } else {
+        const backgroundAsset = await this.assetService.create({
+          url: secure_url,
+          type: 'image'
+        });
+        updateProfileDto.background = backgroundAsset;
+      }
+    }
     return this.userService.updateProfile(user, updateProfileDto);
   }
 

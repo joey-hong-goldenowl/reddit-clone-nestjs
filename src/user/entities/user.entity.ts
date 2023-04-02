@@ -1,7 +1,8 @@
 import { Exclude } from 'class-transformer';
-import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, BeforeInsert } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToOne, JoinColumn } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { TABLE } from '../../helpers/enum/table.enum';
+import { Asset } from 'src/asset/entities/asset.entity';
 
 @Entity(TABLE.USERS)
 export class User {
@@ -37,4 +38,12 @@ export class User {
   async hashPassword() {
     this.password = await bcrypt.hash(this.password, 10);
   }
+
+  @OneToOne(() => Asset, { eager: true })
+  @JoinColumn({ name: 'avatar_asset_id' })
+  public avatar: Asset;
+
+  @OneToOne(() => Asset, { eager: true })
+  @JoinColumn({ name: 'background_asset_id' })
+  public background: Asset;
 }
