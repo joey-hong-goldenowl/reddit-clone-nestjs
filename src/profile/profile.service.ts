@@ -14,8 +14,10 @@ export class ProfileService {
   constructor(private readonly userService: UserService, private readonly cloudinaryService: CloudinaryService, private readonly assetService: AssetService) {}
 
   async updateProfile(user: User, updateProfileDto: UpdateProfileDto, avatar: Express.Multer.File, background: Express.Multer.File) {
+    delete updateProfileDto.background;
+    delete updateProfileDto.avatar;
     const { delete_avatar = false, delete_background = false } = updateProfileDto;
-    if (delete_avatar) {
+    if (delete_avatar && user.avatar) {
       const asset_id = user.avatar.id;
       await this.cloudinaryService.deleteImage({
         image_url: user.avatar.url,
@@ -47,9 +49,8 @@ export class ProfileService {
         updateProfileDto.avatar = avatarAsset;
       }
     }
-    if (delete_background) {
+    if (delete_background && user.background) {
       const asset_id = user.background.id;
-      console.log('url', user.background.url);
       await this.cloudinaryService.deleteImage({
         image_url: user.background.url,
         user_id: user.id

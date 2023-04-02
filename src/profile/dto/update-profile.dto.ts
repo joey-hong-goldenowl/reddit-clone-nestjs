@@ -13,11 +13,9 @@ export class UpdateProfileDto {
   description: string;
 
   @IsOptional()
-  @IsString()
   avatar: Asset;
 
   @IsOptional()
-  @IsString()
   background: Asset;
 
   @IsOptional()
