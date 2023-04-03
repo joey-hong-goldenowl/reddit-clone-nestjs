@@ -2,7 +2,7 @@ import { Exclude } from 'class-transformer';
 import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToOne, JoinColumn } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { TABLE } from '../../helpers/enum/table.enum';
-import { Asset } from 'src/asset/entities/asset.entity';
+import { Asset } from '../../asset/entities/asset.entity';
 
 @Entity(TABLE.USERS)
 export class User {

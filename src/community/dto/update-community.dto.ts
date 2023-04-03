@@ -1,12 +1,11 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsOptional, IsString, Length } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import { Asset } from '../../asset/entities/asset.entity';
 
-export class UpdateProfileDto {
+export class UpdateCommunityDto {
   @IsOptional()
   @IsString()
-  @Length(1)
-  display_name: string;
+  title: string;
 
   @IsOptional()
   @IsString()
@@ -16,7 +15,7 @@ export class UpdateProfileDto {
   avatar: Asset;
 
   @IsOptional()
-  background: Asset;
+  banner: Asset;
 
   @IsOptional()
   @Transform(({ value }) => value === 'true')
@@ -26,5 +25,5 @@ export class UpdateProfileDto {
   @IsOptional()
   @Transform(({ value }) => value === 'true')
   @IsBoolean()
-  delete_background: boolean;
+  delete_banner: boolean;
 }

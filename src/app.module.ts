@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { ProfileModule } from './profile/profile.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { AssetModule } from './asset/asset.module';
+import { CommunityModule } from './community/community.module';
 
 @Module({
   imports: [
@@ -27,7 +28,8 @@ import { AssetModule } from './asset/asset.module';
     AuthModule,
     ProfileModule,
     CloudinaryModule,
-    AssetModule
+    AssetModule,
+    CommunityModule
   ]
 })
 export class AppModule {}
