@@ -46,7 +46,7 @@ export class CommunityController {
 
   @UseGuards(JwtAuthGuard, CommunityOwnerGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.communityService.remove(+id);
+  remove(@Param('id') id: string, @Request() req: ReqWithUser) {
+    return this.communityService.remove(+id, req.user);
   }
 }

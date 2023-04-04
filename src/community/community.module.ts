@@ -9,6 +9,7 @@ import { AssetModule } from 'src/asset/asset.module';
 @Module({
   imports: [TypeOrmModule.forFeature([Community]), CloudinaryModule, AssetModule],
   controllers: [CommunityController],
-  providers: [CommunityService]
+  providers: [CommunityService],
+  exports: [CommunityService]
 })
 export class CommunityModule {}

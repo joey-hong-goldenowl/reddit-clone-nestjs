@@ -63,13 +63,11 @@ export class CommunityMigration1680438063899 implements MigrationInterface {
         columnNames: ['avatar_asset_id'],
         referencedColumnNames: ['id'],
         referencedTableName: TABLE.ASSETS,
-        onDelete: 'CASCADE'
       }),
       new TableForeignKey({
         columnNames: ['banner_asset_id'],
         referencedColumnNames: ['id'],
         referencedTableName: TABLE.ASSETS,
-        onDelete: 'CASCADE'
       }),
       new TableForeignKey({
         columnNames: ['owner_id'],

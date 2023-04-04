@@ -35,11 +35,15 @@ export class CommunityService {
   }
 
   findAll() {
-    return `This action returns all community`;
+    return this.communityRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} community`;
+  async findOne(id: number) {
+    const community = await this.findOneById(id);
+    if (community) {
+      return community;
+    }
+    throw new NotFoundException('Community not found');
   }
 
   async update(id: number, updateCommunityDto: UpdateCommunityDto, user: User, avatar?: Express.Multer.File, banner?: Express.Multer.File) {
@@ -127,10 +131,26 @@ export class CommunityService {
     return this.findOneById(id);
   }
 
-  async remove(id: number) {
+  async remove(id: number, user: User) {
     const community = await this.findOneById(id);
     if (community) {
-      await this.communityRepository.delete({ id });
+      const avatarAssetId = community.avatar.id;
+      const avatarUrl = community.avatar.url;
+      const bannerAssetId = community.banner.id;
+      const bannerUrl = community.banner.url;
+      await Promise.all([
+        this.communityRepository.delete({ id }),
+        this.assetService.delete(avatarAssetId),
+        this.assetService.delete(bannerAssetId),
+        this.cloudinaryService.deleteImage({
+          image_url: avatarUrl,
+          user_id: user.id
+        }),
+        this.cloudinaryService.deleteImage({
+          image_url: bannerUrl,
+          user_id: user.id
+        })
+      ]);
       return { success: true };
     }
     throw new NotFoundException('Community not found');
@@ -138,6 +158,10 @@ export class CommunityService {
 
   findOneById(id: number) {
     return this.communityRepository.findOneBy({ id });
+  }
+
+  findAllOwned(userId: number) {
+    return this.communityRepository.findBy({ owner: { id: userId } });
   }
 
   async isOwnerOfCommunity(user: User, communityId: number) {
