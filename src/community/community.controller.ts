@@ -6,6 +6,7 @@ import { CommunityService } from './community.service';
 import { CreateCommunityRequestDto } from './dto/create-community.dto';
 import { UpdateCommunityRequestDto } from './dto/update-community.dto';
 import CommunityOwnerGuard from './guards/community-owner.guard';
+import NotCommunityOwnerGuard from './guards/not-community-owner.guard';
 
 @Controller('community')
 export class CommunityController {
@@ -50,7 +51,7 @@ export class CommunityController {
     return this.communityService.remove(+id, req.user);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, NotCommunityOwnerGuard)
   @Post(':id/join')
   joinCommunity(@Param('id') id: string, @Request() req: ReqWithUser) {
     return this.communityService.joinCommunity(+id, req.user);

@@ -8,12 +8,15 @@ import { Repository } from 'typeorm';
 import { CreateCommunityRequestDto } from './dto/create-community.dto';
 import { UpdateCommunityRequestDto } from './dto/update-community.dto';
 import { Community } from './entities/community.entity';
+import { CommunityMember } from './entities/community_member.entity';
 
 @Injectable()
 export class CommunityService {
   constructor(
     @InjectRepository(Community)
     private communityRepository: Repository<Community>,
+    @InjectRepository(CommunityMember)
+    private communityMemberRepository: Repository<CommunityMember>,
     private readonly cloudinaryService: CloudinaryService,
     private readonly assetService: AssetService
   ) {}
@@ -27,7 +30,7 @@ export class CommunityService {
     if (community) {
       throw new BadRequestException(`Community's name is already in use`);
     }
-    const newCommunity = await this.communityRepository.create({
+    const newCommunity = this.communityRepository.create({
       name,
       owner: user
     });
@@ -184,5 +187,19 @@ export class CommunityService {
     });
   }
 
-  joinCommunity(communityId: number, user: User) {}
+  async joinCommunity(communityId: number, user: User) {
+    const communityMember = await this.communityMemberRepository.findOneBy({
+      community_id: communityId,
+      user_id: user.id
+    });
+    if (communityMember) {
+      console.log('??');
+      throw new BadRequestException('User is already in community');
+    }
+    const newCommunityMember = this.communityMemberRepository.create({
+      community_id: communityId,
+      user_id: user.id
+    });
+    return this.communityMemberRepository.save(newCommunityMember);
+  }
 }
