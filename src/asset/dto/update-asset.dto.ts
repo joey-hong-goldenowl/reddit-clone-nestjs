@@ -1,6 +1,6 @@
 import { IsOptional, IsString } from 'class-validator';
 
-export class UpdateAssetDto {
+export class UpdateAssetRequestDto {
   @IsOptional()
   @IsString()
   url: string;

@@ -2,8 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { InsertResult, Repository } from 'typeorm';
-import { RegisterDto } from 'src/auth/dto/register.dto';
-import { UpdateProfileDto } from 'src/profile/dto/update-profile.dto';
+import { RegisterRequestDto } from 'src/auth/dto/register.dto';
+import { UpdateProfileRequestDto } from 'src/profile/dto/update-profile.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -13,10 +13,10 @@ export class UserService {
     private userRepository: Repository<User>
   ) {}
 
-  async create(registerDto: RegisterDto): Promise<InsertResult> {
+  async create(registerRequestDto: RegisterRequestDto): Promise<InsertResult> {
     const newUser = this.userRepository.create({
-      ...registerDto,
-      display_name: registerDto.username
+      ...registerRequestDto,
+      display_name: registerRequestDto.username
     });
     return this.userRepository.insert(newUser);
   }
@@ -29,12 +29,12 @@ export class UserService {
     return this.userRepository.findOneBy({ id });
   }
 
-  async updateProfile(user: User, updateProfileDto: UpdateProfileDto) {
+  async updateProfile(user: User, updateProfileRequestDto: UpdateProfileRequestDto) {
     await this.userRepository.update(user.id, {
-      description: updateProfileDto.description,
-      display_name: updateProfileDto.display_name,
-      avatar: updateProfileDto.avatar,
-      background: updateProfileDto.background
+      description: updateProfileRequestDto.description,
+      display_name: updateProfileRequestDto.display_name,
+      avatar: updateProfileRequestDto.avatar,
+      background: updateProfileRequestDto.background
     });
     return this.findOneById(user.id);
   }

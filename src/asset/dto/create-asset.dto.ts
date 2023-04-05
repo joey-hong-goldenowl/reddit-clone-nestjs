@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 
-export class CreateAssetDto {
+export class CreateAssetRequestDto {
   @IsNotEmpty()
   @IsString()
   url: string;

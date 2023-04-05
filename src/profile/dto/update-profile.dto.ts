@@ -2,7 +2,7 @@ import { Transform } from 'class-transformer';
 import { IsBoolean, IsOptional, IsString, Length } from 'class-validator';
 import { Asset } from '../../asset/entities/asset.entity';
 
-export class UpdateProfileDto {
+export class UpdateProfileRequestDto {
   @IsOptional()
   @IsString()
   @Length(1)

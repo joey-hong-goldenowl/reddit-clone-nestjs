@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, UseInterceptors, UploadedFiles } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import JwtAuthGuard from 'src/auth/guards/jwt-auth.guard';
-import ReqWithUser from 'src/auth/interface/req-with-user.interface';
+import { ReqWithUser } from 'src/auth/interface/auth.interface';
 import { CommunityService } from './community.service';
-import { CreateCommunityDto } from './dto/create-community.dto';
-import { UpdateCommunityDto } from './dto/update-community.dto';
+import { CreateCommunityRequestDto } from './dto/create-community.dto';
+import { UpdateCommunityRequestDto } from './dto/update-community.dto';
 import CommunityOwnerGuard from './guards/community-owner.guard';
 
 @Controller('community')
@@ -13,8 +13,8 @@ export class CommunityController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Request() req: ReqWithUser, @Body() createCommunityDto: CreateCommunityDto) {
-    return this.communityService.create(req.user, createCommunityDto);
+  create(@Request() req: ReqWithUser, @Body() createCommunityRequestDto: CreateCommunityRequestDto) {
+    return this.communityService.create(req.user, createCommunityRequestDto);
   }
 
   @Get()
@@ -38,15 +38,21 @@ export class CommunityController {
   update(
     @Param('id') id: string,
     @Request() req: ReqWithUser,
-    @Body() updateCommunityDto: UpdateCommunityDto,
+    @Body() updateCommunityRequestDto: UpdateCommunityRequestDto,
     @UploadedFiles() files: { avatar?: Express.Multer.File[]; banner?: Express.Multer.File[] }
   ) {
-    return this.communityService.update(+id, updateCommunityDto, req.user, files.avatar?.[0], files.banner?.[0]);
+    return this.communityService.update(+id, updateCommunityRequestDto, req.user, files.avatar?.[0], files.banner?.[0]);
   }
 
   @UseGuards(JwtAuthGuard, CommunityOwnerGuard)
   @Delete(':id')
   remove(@Param('id') id: string, @Request() req: ReqWithUser) {
     return this.communityService.remove(+id, req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/join')
+  joinCommunity(@Param('id') id: string, @Request() req: ReqWithUser) {
+    return this.communityService.joinCommunity(+id, req.user);
   }
 }

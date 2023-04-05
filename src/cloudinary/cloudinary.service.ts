@@ -2,9 +2,8 @@ import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 } from 'cloudinary';
 import toStream = require('buffer-to-stream');
-import { UploadImage } from './interfaces/UploadImage.interface';
 import { getImageId } from '../helpers/utils/string';
-import { DeleteImage } from './interfaces/DeleteImage.interface';
+import { DeleteImage, UploadImage } from './interfaces/cloudinary.interface';
 
 @Injectable()
 export class CloudinaryService {

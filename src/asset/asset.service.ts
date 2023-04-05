@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateAssetDto } from './dto/create-asset.dto';
-import { UpdateAssetDto } from './dto/update-asset.dto';
+import { CreateAssetRequestDto } from './dto/create-asset.dto';
+import { UpdateAssetRequestDto } from './dto/update-asset.dto';
 import { Asset } from './entities/asset.entity';
 
 @Injectable()
@@ -12,10 +12,10 @@ export class AssetService {
     private assetRepository: Repository<Asset>
   ) {}
 
-  async create(createAssetDto: CreateAssetDto) {
+  async create(createAssetRequestDto: CreateAssetRequestDto) {
     const newAsset = await this.assetRepository.create({
-      url: createAssetDto.url,
-      type: createAssetDto.type
+      url: createAssetRequestDto.url,
+      type: createAssetRequestDto.type
     });
 
     return this.assetRepository.save(newAsset);
@@ -25,9 +25,9 @@ export class AssetService {
     return this.assetRepository.delete({ id: assetId });
   }
 
-  async update(assetId: number, updateAssetDto: UpdateAssetDto) {
+  async update(assetId: number, updateAssetRequestDto: UpdateAssetRequestDto) {
     return this.assetRepository.update(assetId, {
-      ...updateAssetDto
+      ...updateAssetRequestDto
     });
   }
 }

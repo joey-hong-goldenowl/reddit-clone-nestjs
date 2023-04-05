@@ -4,14 +4,15 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { User } from 'src/user/entities/user.entity';
 import { UserService } from 'src/user/user.service';
-import { RegisterDto } from './dto/register.dto';
+import { RegisterRequestDto } from './dto/register.dto';
+import { TokenPayload } from './interface/auth.interface';
 
 @Injectable()
 export class AuthService {
   constructor(private readonly userService: UserService, private readonly jwtService: JwtService, private readonly configService: ConfigService) {}
 
-  async register(registerDto: RegisterDto): Promise<User> {
-    const { email, username } = registerDto;
+  async register(registerRequestDto: RegisterRequestDto): Promise<User> {
+    const { email, username } = registerRequestDto;
     const userWithSameEmail = await this.userService.findOneByEmail(email);
     if (userWithSameEmail) {
       throw new BadRequestException('Email address is already in use');
@@ -20,7 +21,7 @@ export class AuthService {
     if (userWithSameUsername) {
       throw new BadRequestException('Username is already in use');
     }
-    await this.userService.create(registerDto);
+    await this.userService.create(registerRequestDto);
     const newUser = await this.userService.findOneByEmail(email);
     return newUser;
   }

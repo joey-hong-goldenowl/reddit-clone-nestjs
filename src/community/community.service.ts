@@ -5,8 +5,8 @@ import { AssetService } from 'src/asset/asset.service';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { User } from 'src/user/entities/user.entity';
 import { Repository } from 'typeorm';
-import { CreateCommunityDto } from './dto/create-community.dto';
-import { UpdateCommunityDto } from './dto/update-community.dto';
+import { CreateCommunityRequestDto } from './dto/create-community.dto';
+import { UpdateCommunityRequestDto } from './dto/update-community.dto';
 import { Community } from './entities/community.entity';
 
 @Injectable()
@@ -18,8 +18,8 @@ export class CommunityService {
     private readonly assetService: AssetService
   ) {}
 
-  async create(user: User, createCommunityDto: CreateCommunityDto) {
-    const { name } = createCommunityDto;
+  async create(user: User, createCommunityRequestDto: CreateCommunityRequestDto) {
+    const { name } = createCommunityRequestDto;
     if (name.trim().split(' ').length > 1) {
       throw new BadRequestException(`Community's name must not have space`);
     }
@@ -46,11 +46,11 @@ export class CommunityService {
     throw new NotFoundException('Community not found');
   }
 
-  async update(id: number, updateCommunityDto: UpdateCommunityDto, user: User, avatar?: Express.Multer.File, banner?: Express.Multer.File) {
-    delete updateCommunityDto.avatar;
-    delete updateCommunityDto.banner;
+  async update(id: number, updateCommunityRequestDto: UpdateCommunityRequestDto, user: User, avatar?: Express.Multer.File, banner?: Express.Multer.File) {
+    delete updateCommunityRequestDto.avatar;
+    delete updateCommunityRequestDto.banner;
 
-    const { delete_avatar, delete_banner } = updateCommunityDto;
+    const { delete_avatar, delete_banner } = updateCommunityRequestDto;
     const community = await this.findOneById(id);
     if (!community) {
       throw new NotFoundException('Community not found');
@@ -85,7 +85,7 @@ export class CommunityService {
           url: secure_url,
           type: 'image'
         });
-        updateCommunityDto.avatar = avatarAsset;
+        updateCommunityRequestDto.avatar = avatarAsset;
       }
     }
 
@@ -118,15 +118,15 @@ export class CommunityService {
           url: secure_url,
           type: 'image'
         });
-        updateCommunityDto.banner = bannerAsset;
+        updateCommunityRequestDto.banner = bannerAsset;
       }
     }
 
     await this.communityRepository.update(id, {
-      description: updateCommunityDto.description,
-      title: updateCommunityDto.title,
-      avatar: updateCommunityDto.avatar,
-      banner: updateCommunityDto.banner
+      description: updateCommunityRequestDto.description,
+      title: updateCommunityRequestDto.title,
+      avatar: updateCommunityRequestDto.avatar,
+      banner: updateCommunityRequestDto.banner
     });
     return this.findOneById(id);
   }
@@ -172,15 +172,17 @@ export class CommunityService {
     return community.owner.id === user.id;
   }
 
-  async removeAvatar(communityId) {
+  async removeAvatar(communityId: number) {
     await this.communityRepository.update(communityId, {
       avatar: null
     });
   }
 
-  async removeBanner(communityId) {
+  async removeBanner(communityId: number) {
     await this.communityRepository.update(communityId, {
       banner: null
     });
   }
+
+  joinCommunity(communityId: number, user: User) {}
 }
