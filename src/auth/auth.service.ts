@@ -27,7 +27,7 @@ export class AuthService {
   }
 
   async getAuthenticatedUser(email: string, password: string) {
-    const user = await this.userService.findOneByEmail(email);
+    const user = await this.userService.findOneByEmailWithPassword(email);
     if (!user) {
       throw new BadRequestException('Email or password is invalid');
     }
@@ -36,8 +36,8 @@ export class AuthService {
   }
 
   async verifyPassword(password: string, hashedPassword: string) {
-    const isPasswordMatch = await bcrypt.compare(password, hashedPassword);
-    if (!isPasswordMatch) {
+    const passwordMatch = await bcrypt.compare(password, hashedPassword);
+    if (!passwordMatch) {
       throw new BadRequestException('Email or password is invalid');
     }
   }

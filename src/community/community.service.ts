@@ -9,6 +9,7 @@ import { CreateCommunityRequestDto } from './dto/create-community.dto';
 import { UpdateCommunityRequestDto } from './dto/update-community.dto';
 import { Community } from './entities/community.entity';
 import { CommunityMember } from './entities/community_member.entity';
+import { TABLE } from 'src/helpers/enum/table.enum';
 
 @Injectable()
 export class CommunityService {
@@ -17,6 +18,8 @@ export class CommunityService {
     private communityRepository: Repository<Community>,
     @InjectRepository(CommunityMember)
     private communityMemberRepository: Repository<CommunityMember>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
     private readonly cloudinaryService: CloudinaryService,
     private readonly assetService: AssetService
   ) {}
@@ -193,7 +196,6 @@ export class CommunityService {
       user_id: user.id
     });
     if (communityMember) {
-      console.log('??');
       throw new BadRequestException('User is already in community');
     }
     const newCommunityMember = this.communityMemberRepository.create({
@@ -201,5 +203,19 @@ export class CommunityService {
       user_id: user.id
     });
     return this.communityMemberRepository.save(newCommunityMember);
+  }
+
+  async getMemberList(communityId: number) {
+    // TODO: add pagination
+    const community = await this.communityRepository.findOneBy({ id: communityId });
+    if (!community) {
+      throw new NotFoundException(`Community doesn't exist`);
+    }
+    return this.userRepository
+      .createQueryBuilder('user')
+      .innerJoin(TABLE.COMMUNITY_MEMBERS, 'community_member', 'community_member.user_id = user.id')
+      .where('community_member.community_id = :communityId', { communityId })
+      .leftJoinAndSelect('user.avatar', 'asset')
+      .getMany();
   }
 }

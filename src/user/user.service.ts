@@ -82,4 +82,8 @@ export class UserService {
   async findOneByUsername(username: string) {
     return this.userRepository.findOneBy({ username });
   }
+
+  async findOneByEmailWithPassword(email: string) {
+    return this.userRepository.createQueryBuilder('u').addSelect('u.password').where('email = :email', { email }).getOne();
+  }
 }

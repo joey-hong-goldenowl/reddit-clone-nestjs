@@ -56,4 +56,9 @@ export class CommunityController {
   joinCommunity(@Param('id') id: string, @Request() req: ReqWithUser) {
     return this.communityService.joinCommunity(+id, req.user);
   }
+
+  @Get(':id/members')
+  getMemberList(@Param('id') id: string) {
+    return this.communityService.getMemberList(+id)
+  }
 }
