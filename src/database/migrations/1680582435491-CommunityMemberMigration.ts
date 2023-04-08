@@ -1,5 +1,6 @@
 import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
 import { TABLE } from '../../helpers/enum/table.enum';
+import { MemberRole } from '../../community/entities/community_member.entity';
 
 export class CommunityMemberMigration1680582435491 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -26,6 +27,13 @@ export class CommunityMemberMigration1680582435491 implements MigrationInterface
             name: 'updated_at',
             type: 'timestamp',
             default: 'now()'
+          },
+          {
+            name: 'role',
+            type: 'enum',
+            enum: Object.keys(MemberRole).map(key => MemberRole[key]),
+            enumName: 'memberRoleEnum',
+            default: `'${MemberRole.MEMBER}'`
           }
         ]
       })
@@ -35,12 +43,14 @@ export class CommunityMemberMigration1680582435491 implements MigrationInterface
       new TableForeignKey({
         columnNames: ['community_id'],
         referencedColumnNames: ['id'],
-        referencedTableName: TABLE.COMMUNITIES
+        referencedTableName: TABLE.COMMUNITIES,
+        onDelete: 'CASCADE'
       }),
       new TableForeignKey({
         columnNames: ['user_id'],
         referencedColumnNames: ['id'],
-        referencedTableName: TABLE.USERS
+        referencedTableName: TABLE.USERS,
+        onDelete: 'CASCADE'
       })
     ]);
   }

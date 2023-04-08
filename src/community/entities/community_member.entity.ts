@@ -1,5 +1,11 @@
-import { CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 import { TABLE } from '../../helpers/enum/table.enum';
+
+export enum MemberRole {
+  OWNER = 'owner',
+  MODERATOR = 'moderator',
+  MEMBER = 'member'
+}
 
 @Entity(TABLE.COMMUNITY_MEMBERS)
 export class CommunityMember {
@@ -10,8 +16,15 @@ export class CommunityMember {
   user_id: number;
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
-  public created_at: Date;
+  created_at: Date;
 
   @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', onUpdate: 'CURRENT_TIMESTAMP(6)' })
-  public updated_at: Date;
+  updated_at: Date;
+
+  @Column({
+    type: 'enum',
+    enum: MemberRole,
+    default: MemberRole.MEMBER
+  })
+  role: MemberRole;
 }

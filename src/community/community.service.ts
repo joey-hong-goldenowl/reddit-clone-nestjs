@@ -8,7 +8,7 @@ import { Repository } from 'typeorm';
 import { CreateCommunityRequestDto } from './dto/create-community.dto';
 import { UpdateCommunityRequestDto } from './dto/update-community.dto';
 import { Community } from './entities/community.entity';
-import { CommunityMember } from './entities/community_member.entity';
+import { CommunityMember, MemberRole } from './entities/community_member.entity';
 import { TABLE } from 'src/helpers/enum/table.enum';
 
 @Injectable()
@@ -37,7 +37,14 @@ export class CommunityService {
       name,
       owner: user
     });
-    return this.communityRepository.save(newCommunity);
+    const addedCommunity = await this.communityRepository.save(newCommunity);
+    const ownerMember = this.communityMemberRepository.create({
+      community_id: addedCommunity.id,
+      user_id: user.id,
+      role: MemberRole.OWNER
+    });
+    await this.communityMemberRepository.save(ownerMember);
+    return addedCommunity;
   }
 
   findAll() {
@@ -140,23 +147,34 @@ export class CommunityService {
   async remove(id: number, user: User) {
     const community = await this.findOneById(id);
     if (community) {
-      const avatarAssetId = community.avatar.id;
-      const avatarUrl = community.avatar.url;
-      const bannerAssetId = community.banner.id;
-      const bannerUrl = community.banner.url;
-      await Promise.all([
-        this.communityRepository.delete({ id }),
-        this.assetService.delete(avatarAssetId),
-        this.assetService.delete(bannerAssetId),
-        this.cloudinaryService.deleteImage({
-          image_url: avatarUrl,
-          user_id: user.id
-        }),
-        this.cloudinaryService.deleteImage({
-          image_url: bannerUrl,
-          user_id: user.id
-        })
-      ]);
+      const avatarAssetId = community.avatar?.id;
+      const avatarUrl = community.avatar?.url;
+      const bannerAssetId = community.banner?.id;
+      const bannerUrl = community.banner?.url;
+      await this.communityRepository.delete({ id });
+
+      const promiseArr = [];
+      if (avatarAssetId) {
+        promiseArr.push(this.assetService.delete(avatarAssetId));
+        promiseArr.push(
+          this.cloudinaryService.deleteImage({
+            image_url: avatarUrl,
+            user_id: user.id
+          })
+        );
+      }
+      if (bannerAssetId) {
+        promiseArr.push(this.assetService.delete(bannerAssetId));
+        promiseArr.push(
+          this.cloudinaryService.deleteImage({
+            image_url: bannerUrl,
+            user_id: user.id
+          })
+        );
+      }
+      if (promiseArr.length > 0) {
+        await Promise.all(promiseArr);
+      }
       return { success: true };
     }
     throw new NotFoundException('Community not found');
@@ -211,11 +229,30 @@ export class CommunityService {
     if (!community) {
       throw new NotFoundException(`Community doesn't exist`);
     }
-    return this.userRepository
-      .createQueryBuilder('user')
-      .innerJoin(TABLE.COMMUNITY_MEMBERS, 'community_member', 'community_member.user_id = user.id')
-      .where('community_member.community_id = :communityId', { communityId })
-      .leftJoinAndSelect('user.avatar', 'asset')
-      .getMany();
+    // return (
+    //   this.userRepository
+    //     .createQueryBuilder()
+    //     .from(TABLE.USERS, 'user')
+    //     .innerJoin(TABLE.COMMUNITY_MEMBERS, 'community_member', 'community_member.user_id = user.id')
+    //     // .where('community_member.community_id = :communityId', { communityId })
+    //     // .leftJoinAndSelect('user.avatar', 'asset')
+    //     .select('user.id', 'id')
+    //     .getMany()
+    // );
+    // return this.communityMemberRepository.query(
+    //   `SELECT user.* FROM ${TABLE.COMMUNITY_MEMBERS} c_u INNER JOIN ${TABLE.USERS} user ON c_u.user_id = user.id WHERE c_u.community_id = ${communityId}`
+    // );
+    return this.communityMemberRepository.query(`
+      SELECT 
+        ${TABLE.USERS}.id,
+        ${TABLE.USERS}.username,
+        ${TABLE.USERS}.email,
+        ${TABLE.COMMUNITY_MEMBERS}.role as role,
+        ${TABLE.ASSETS}.url as avatar_url
+      FROM ${TABLE.COMMUNITY_MEMBERS}, ${TABLE.USERS}, ${TABLE.ASSETS}
+      WHERE ${TABLE.COMMUNITY_MEMBERS}.user_id = ${TABLE.USERS}.id
+        AND ${TABLE.COMMUNITY_MEMBERS}.community_id = ${communityId}
+        AND ${TABLE.USERS}.avatar_asset_id = ${TABLE.ASSETS}.id
+    `);
   }
 }
