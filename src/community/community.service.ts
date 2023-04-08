@@ -196,6 +196,15 @@ export class CommunityService {
     return community.owner.id === user.id;
   }
 
+  async isAuthorized(user: User, communityId: number, roles: MemberRole[]) {
+    const community = await this.findOneById(communityId);
+    if (!community) {
+      throw new NotFoundException('Community not found');
+    }
+    const { role } = await this.findMember(user, communityId);
+    return roles.includes(role);
+  }
+
   async removeAvatar(communityId: number) {
     await this.communityRepository.update(communityId, {
       avatar: null
@@ -254,5 +263,16 @@ export class CommunityService {
         AND ${TABLE.COMMUNITY_MEMBERS}.community_id = ${communityId}
         AND ${TABLE.USERS}.avatar_asset_id = ${TABLE.ASSETS}.id
     `);
+  }
+
+  async findMember(user: User, communityId: number) {
+    const member = await this.communityMemberRepository.findOneBy({
+      community_id: communityId,
+      user_id: user.id
+    });
+    if (!member) {
+      throw new NotFoundException('User is not in this community');
+    }
+    return member;
   }
 }

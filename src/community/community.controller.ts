@@ -5,8 +5,9 @@ import { ReqWithUser } from 'src/auth/interface/auth.interface';
 import { CommunityService } from './community.service';
 import { CreateCommunityRequestDto } from './dto/create-community.dto';
 import { UpdateCommunityRequestDto } from './dto/update-community.dto';
-import CommunityOwnerGuard from './guards/community-owner.guard';
-import NotCommunityOwnerGuard from './guards/not-community-owner.guard';
+import RolesGuard from './guards/roles.guard';
+import { MemberRole } from './entities/community_member.entity';
+import Roles from './decorators/roles.decorator';
 
 @Controller('community')
 export class CommunityController {
@@ -28,7 +29,8 @@ export class CommunityController {
     return this.communityService.findOne(+id);
   }
 
-  @UseGuards(JwtAuthGuard, CommunityOwnerGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(MemberRole.OWNER)
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'avatar', maxCount: 1 },
@@ -45,13 +47,14 @@ export class CommunityController {
     return this.communityService.update(+id, updateCommunityRequestDto, req.user, files.avatar?.[0], files.banner?.[0]);
   }
 
-  @UseGuards(JwtAuthGuard, CommunityOwnerGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Delete(':id')
+  @Roles(MemberRole.OWNER)
   remove(@Param('id') id: string, @Request() req: ReqWithUser) {
     return this.communityService.remove(+id, req.user);
   }
 
-  @UseGuards(JwtAuthGuard, NotCommunityOwnerGuard)
+  @UseGuards(JwtAuthGuard)
   @Post(':id/join')
   joinCommunity(@Param('id') id: string, @Request() req: ReqWithUser) {
     return this.communityService.joinCommunity(+id, req.user);
@@ -59,6 +62,6 @@ export class CommunityController {
 
   @Get(':id/members')
   getMemberList(@Param('id') id: string) {
-    return this.communityService.getMemberList(+id)
+    return this.communityService.getMemberList(+id);
   }
 }
