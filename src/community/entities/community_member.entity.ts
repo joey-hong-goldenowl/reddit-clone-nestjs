@@ -1,5 +1,6 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 import { TABLE } from '../../helpers/enum/table.enum';
+import { User } from 'src/user/entities/user.entity';
 
 export enum MemberRole {
   OWNER = 'owner',
@@ -27,4 +28,8 @@ export class CommunityMember {
     default: MemberRole.MEMBER
   })
   role: MemberRole;
+
+  @OneToOne(() => User, { eager: true })
+  @JoinColumn({ name: 'user_id' })
+  public user: User;
 }

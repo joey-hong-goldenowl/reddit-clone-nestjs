@@ -3,6 +3,7 @@ import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import * as bcrypt from 'bcrypt';
 import { TABLE } from '../../helpers/enum/table.enum';
 import { Asset } from '../../asset/entities/asset.entity';
+import { CommunityMember } from 'src/community/entities/community_member.entity';
 
 @Entity(TABLE.USERS)
 export class User {
@@ -46,4 +47,7 @@ export class User {
   @OneToOne(() => Asset, { eager: true })
   @JoinColumn({ name: 'background_asset_id' })
   public background: Asset;
+
+  @OneToOne(() => CommunityMember, (communityMember: CommunityMember) => communityMember.user)
+  public member_info: CommunityMember;
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, UseInterceptors, UploadedFiles, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import JwtAuthGuard from 'src/auth/guards/jwt-auth.guard';
 import { ReqWithUser } from 'src/auth/interface/auth.interface';
@@ -61,7 +61,11 @@ export class CommunityController {
   }
 
   @Get(':id/members')
-  getMemberList(@Param('id') id: string) {
-    return this.communityService.getMemberList(+id);
+  getMemberList(
+    @Param('id') id: string,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number
+  ) {
+    return this.communityService.getMemberList(+id, page, limit);
   }
 }

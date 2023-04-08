@@ -9,7 +9,6 @@ import { CreateCommunityRequestDto } from './dto/create-community.dto';
 import { UpdateCommunityRequestDto } from './dto/update-community.dto';
 import { Community } from './entities/community.entity';
 import { CommunityMember, MemberRole } from './entities/community_member.entity';
-import { TABLE } from 'src/helpers/enum/table.enum';
 
 @Injectable()
 export class CommunityService {
@@ -220,7 +219,9 @@ export class CommunityService {
   async joinCommunity(communityId: number, user: User) {
     const communityMember = await this.communityMemberRepository.findOneBy({
       community_id: communityId,
-      user_id: user.id
+      user: {
+        id: user.id
+      }
     });
     if (communityMember) {
       throw new BadRequestException('User is already in community');
@@ -232,37 +233,31 @@ export class CommunityService {
     return this.communityMemberRepository.save(newCommunityMember);
   }
 
-  async getMemberList(communityId: number) {
-    // TODO: add pagination
+  async getMemberList(communityId: number, page: number, limit: number) {
+    if (page < 1) page = 1;
     const community = await this.communityRepository.findOneBy({ id: communityId });
     if (!community) {
       throw new NotFoundException(`Community doesn't exist`);
     }
-    // return (
-    //   this.userRepository
-    //     .createQueryBuilder()
-    //     .from(TABLE.USERS, 'user')
-    //     .innerJoin(TABLE.COMMUNITY_MEMBERS, 'community_member', 'community_member.user_id = user.id')
-    //     // .where('community_member.community_id = :communityId', { communityId })
-    //     // .leftJoinAndSelect('user.avatar', 'asset')
-    //     .select('user.id', 'id')
-    //     .getMany()
-    // );
-    // return this.communityMemberRepository.query(
-    //   `SELECT user.* FROM ${TABLE.COMMUNITY_MEMBERS} c_u INNER JOIN ${TABLE.USERS} user ON c_u.user_id = user.id WHERE c_u.community_id = ${communityId}`
-    // );
-    return this.communityMemberRepository.query(`
-      SELECT 
-        ${TABLE.USERS}.id,
-        ${TABLE.USERS}.username,
-        ${TABLE.USERS}.email,
-        ${TABLE.COMMUNITY_MEMBERS}.role as role,
-        ${TABLE.ASSETS}.url as avatar_url
-      FROM ${TABLE.COMMUNITY_MEMBERS}, ${TABLE.USERS}, ${TABLE.ASSETS}
-      WHERE ${TABLE.COMMUNITY_MEMBERS}.user_id = ${TABLE.USERS}.id
-        AND ${TABLE.COMMUNITY_MEMBERS}.community_id = ${communityId}
-        AND ${TABLE.USERS}.avatar_asset_id = ${TABLE.ASSETS}.id
-    `);
+    const skip = (page - 1) * limit;
+    const qb = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.member_info', 'member_info')
+      .leftJoinAndSelect('user.avatar', 'avatar')
+      .where('member_info.community_id = :communityId', { communityId })
+      .select(['user.id', 'user.username', 'user.email'])
+      .addSelect(['member_info.role'])
+      .addSelect(['avatar.url', 'avatar.type'])
+      .take(limit)
+      .skip(skip);
+
+    const list = await qb.getMany();
+    const total = await qb.getCount();
+    return {
+      list,
+      total,
+      count: list.length
+    };
   }
 
   async findMember(user: User, communityId: number) {
