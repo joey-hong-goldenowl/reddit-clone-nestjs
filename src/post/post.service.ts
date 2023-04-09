@@ -146,12 +146,21 @@ export class PostService {
   }
 
   async interactPost(postId: number, user: User, interactPostRequestDto: InteractPostRequestDto) {
+    console.log(interactPostRequestDto);
+    const { remove_interaction = false } = interactPostRequestDto;
     const post = await this.postRepository.findOneBy({ id: postId });
     if (!post) {
       throw new NotFoundException(`Post doesn't exist`);
     }
     const interaction = await this.postInteractionRepository.findOneBy({ post_id: postId, user_id: user.id });
     if (interaction) {
+      if (remove_interaction) {
+        await this.postInteractionRepository.delete({
+          post_id: postId,
+          user_id: user.id
+        });
+        return { success: true };
+      }
       // update
       await this.postInteractionRepository.update(
         {
@@ -163,6 +172,10 @@ export class PostService {
         }
       );
       return this.postInteractionRepository.findOneBy({ post_id: postId, user_id: user.id });
+    }
+
+    if (remove_interaction) {
+      throw new NotFoundException();
     }
     const newInteraction = this.postInteractionRepository.create({
       post_id: postId,
