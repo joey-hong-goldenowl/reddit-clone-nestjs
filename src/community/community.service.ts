@@ -9,6 +9,7 @@ import { CreateCommunityRequestDto } from './dto/create-community.dto';
 import { UpdateCommunityRequestDto } from './dto/update-community.dto';
 import { Community } from './entities/community.entity';
 import { CommunityMember, MemberRole } from './entities/community_member.entity';
+import { Post } from 'src/post/entities/post.entity';
 
 @Injectable()
 export class CommunityService {
@@ -19,6 +20,8 @@ export class CommunityService {
     private communityMemberRepository: Repository<CommunityMember>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(Post)
+    private postRepository: Repository<Post>,
     private readonly cloudinaryService: CloudinaryService,
     private readonly assetService: AssetService
   ) {}
@@ -269,5 +272,30 @@ export class CommunityService {
       throw new NotFoundException('User is not in this community');
     }
     return member;
+  }
+
+  async getPostList(communityId: number, page: number, limit: number) {
+    if (page < 1) page = 1;
+    const community = await this.communityRepository.findOneBy({ id: communityId });
+    if (!community) {
+      throw new NotFoundException(`Community doesn't exist`);
+    }
+    const skip = (page - 1) * limit;
+    const qb = this.postRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.assets', 'assets')
+      .leftJoinAndSelect('post.owner', 'owner')
+      .leftJoinAndSelect('assets.details', 'details')
+      .where('post.community_id = :communityId', { communityId })
+      .take(limit)
+      .skip(skip);
+
+    const list = await qb.getMany();
+    const total = await qb.getCount();
+    return {
+      list,
+      total,
+      count: list.length
+    };
   }
 }

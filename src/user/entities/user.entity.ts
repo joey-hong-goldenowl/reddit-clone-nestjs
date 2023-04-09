@@ -3,7 +3,7 @@ import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import * as bcrypt from 'bcrypt';
 import { TABLE } from '../../helpers/enum/table.enum';
 import { Asset } from '../../asset/entities/asset.entity';
-import { CommunityMember } from 'src/community/entities/community_member.entity';
+import { CommunityMember } from '../../community/entities/community_member.entity';
 
 @Entity(TABLE.USERS)
 export class User {

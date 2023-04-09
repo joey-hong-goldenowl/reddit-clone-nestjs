@@ -68,4 +68,9 @@ export class CommunityController {
   ) {
     return this.communityService.getMemberList(+id, page, limit);
   }
+
+  @Get(':id/posts')
+  getPosts(@Param('id') id: string, @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number, @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number) {
+    return this.communityService.getPostList(+id, page, limit);
+  }
 }

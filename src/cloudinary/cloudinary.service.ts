@@ -2,8 +2,8 @@ import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 } from 'cloudinary';
 import toStream = require('buffer-to-stream');
-import { getImageId } from '../helpers/utils/string';
-import { DeleteImage, UploadImage } from './interfaces/cloudinary.interface';
+import { getCloudinaryFileId } from '../helpers/utils/string';
+import { DeleteImage, DeleteVideo, UploadImage, UploadVideo } from './interfaces/cloudinary.interface';
 
 @Injectable()
 export class CloudinaryService {
@@ -15,7 +15,8 @@ export class CloudinaryService {
     return new Promise(resolve => {
       const upload = v2.uploader.upload_stream(
         {
-          folder: `${environment}/${user_id}`
+          folder: `${environment}/${user_id}`,
+          resource_type: 'image'
         },
         (error, result) => {
           if (error) throw new UnprocessableEntityException(error.message);
@@ -30,7 +31,34 @@ export class CloudinaryService {
   async deleteImage(deleteImage: DeleteImage) {
     const { image_url, user_id } = deleteImage;
     const environment = this.configService.get('ENVIRONMENT');
-    const imagePublicId = getImageId(image_url);
+    const imagePublicId = getCloudinaryFileId(image_url);
+    const result = await v2.uploader.destroy(`${environment}/${user_id}/${imagePublicId}`);
+    return result;
+  }
+
+  async uploadVideo(uploadVideo: UploadVideo) {
+    const { user_id, file } = uploadVideo;
+    const environment = this.configService.get('ENVIRONMENT');
+    return new Promise(resolve => {
+      const upload = v2.uploader.upload_stream(
+        {
+          folder: `${environment}/${user_id}`,
+          resource_type: 'video'
+        },
+        (error, result) => {
+          if (error) throw new UnprocessableEntityException(error.message);
+          resolve(result);
+        }
+      );
+
+      toStream(file.buffer).pipe(upload);
+    });
+  }
+
+  async deleteVideo(deleteVideo: DeleteVideo) {
+    const { video_url, user_id } = deleteVideo;
+    const environment = this.configService.get('ENVIRONMENT');
+    const imagePublicId = getCloudinaryFileId(video_url);
     const result = await v2.uploader.destroy(`${environment}/${user_id}/${imagePublicId}`);
     return result;
   }

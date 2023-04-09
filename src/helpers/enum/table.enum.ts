@@ -2,5 +2,7 @@ export enum TABLE {
   USERS = 'users',
   ASSETS = 'assets',
   COMMUNITIES = 'communities',
-  COMMUNITY_MEMBERS = 'community_members'
+  COMMUNITY_MEMBERS = 'community_members',
+  POSTS = 'posts',
+  POST_ASSETS = 'post_assets'
 }

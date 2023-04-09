@@ -8,6 +8,7 @@ import { ProfileModule } from './profile/profile.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { AssetModule } from './asset/asset.module';
 import { CommunityModule } from './community/community.module';
+import { PostModule } from './post/post.module';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { CommunityModule } from './community/community.module';
     ProfileModule,
     CloudinaryModule,
     AssetModule,
-    CommunityModule
+    CommunityModule,
+    PostModule
   ]
 })
 export class AppModule {}
