@@ -16,11 +16,6 @@ export class PostController {
     return this.postService.create(createPostRequestDto, req.user, files.assets);
   }
 
-  @Get()
-  findAll() {
-    return this.postService.findAll();
-  }
-
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.postService.findOne(+id);

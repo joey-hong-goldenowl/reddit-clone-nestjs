@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreatePostRequestDto } from './dto/create-post.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Post, PostType } from './entities/post.entity';
@@ -85,10 +85,6 @@ export class PostService {
     }
   }
 
-  findAll() {
-    return `This action returns all post`;
-  }
-
   findOne(id: number) {
     return this.postRepository
       .createQueryBuilder('post')
@@ -106,6 +102,9 @@ export class PostService {
     });
     if (!post) {
       throw new NotFoundException(`Post doesn't exist`);
+    }
+    if (post.owner.id !== user.id) {
+      throw new ForbiddenException();
     }
     try {
       const { assets = [], type } = post;
