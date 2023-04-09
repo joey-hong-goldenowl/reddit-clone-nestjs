@@ -298,4 +298,19 @@ export class CommunityService {
       count: list.length
     };
   }
+
+  async findOneByIdWithMemberCount(communityId: number) {
+    const community = await this.communityRepository.findOneBy({ id: communityId });
+    if (!community) {
+      throw new NotFoundException(`Community doesn't exist`);
+    }
+    return this.communityRepository
+      .createQueryBuilder('community')
+      .leftJoinAndSelect('community.avatar', 'avatar')
+      .leftJoinAndSelect('community.banner', 'banner')
+      .leftJoinAndSelect('community.owner', 'owner')
+      .loadRelationCountAndMap('community.member_count', 'community.members')
+      .where('community.id = :communityId', { communityId })
+      .getOne();
+  }
 }

@@ -1,7 +1,8 @@
 import { Asset } from '../../asset/entities/asset.entity';
-import { BeforeInsert, Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { BeforeInsert, Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { TABLE } from '../../helpers/enum/table.enum';
 import { User } from '../../user/entities/user.entity';
+import { CommunityMember } from './community_member.entity';
 
 @Entity(TABLE.COMMUNITIES)
 export class Community {
@@ -39,4 +40,7 @@ export class Community {
   generateTitle() {
     this.title = this.name;
   }
+
+  @OneToMany(() => CommunityMember, communityMember => communityMember.community)
+  members?: CommunityMember[];
 }

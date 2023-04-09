@@ -26,7 +26,7 @@ export class CommunityController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.communityService.findOne(+id);
+    return this.communityService.findOneByIdWithMemberCount(+id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
