@@ -10,6 +10,8 @@ import { CommunityService } from 'src/community/community.service';
 import { UploadApiResponse } from 'cloudinary';
 import { PostAsset } from './entities/post-asset.entity';
 import { Asset } from 'src/asset/entities/asset.entity';
+import { InteractPostRequestDto } from './dto/interact-post.dto';
+import { PostInteraction } from './entities/post-interaction.entity';
 
 @Injectable()
 export class PostService {
@@ -18,6 +20,8 @@ export class PostService {
     private postRepository: Repository<Post>,
     @InjectRepository(PostAsset)
     private postAssetRepository: Repository<PostAsset>,
+    @InjectRepository(PostInteraction)
+    private postInteractionRepository: Repository<PostInteraction>,
     private readonly cloudinaryService: CloudinaryService,
     private readonly assetService: AssetService,
     private readonly communityService: CommunityService
@@ -139,5 +143,32 @@ export class PostService {
       console.log('error', error);
       throw new InternalServerErrorException();
     }
+  }
+
+  async interactPost(postId: number, user: User, interactPostRequestDto: InteractPostRequestDto) {
+    const post = await this.postRepository.findOneBy({ id: postId });
+    if (!post) {
+      throw new NotFoundException(`Post doesn't exist`);
+    }
+    const interaction = await this.postInteractionRepository.findOneBy({ post_id: postId, user_id: user.id });
+    if (interaction) {
+      // update
+      await this.postInteractionRepository.update(
+        {
+          post_id: postId,
+          user_id: user.id
+        },
+        {
+          type: interactPostRequestDto.type
+        }
+      );
+      return this.postInteractionRepository.findOneBy({ post_id: postId, user_id: user.id });
+    }
+    const newInteraction = this.postInteractionRepository.create({
+      post_id: postId,
+      user_id: user.id,
+      type: interactPostRequestDto.type
+    });
+    return this.postInteractionRepository.save(newInteraction);
   }
 }
