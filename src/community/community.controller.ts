@@ -8,6 +8,7 @@ import { UpdateCommunityRequestDto } from './dto/update-community.dto';
 import RolesGuard from './guards/roles.guard';
 import { MemberRole } from './entities/community_member.entity';
 import Roles from './decorators/roles.decorator';
+import OptionalJwtAuthGuard from 'src/auth/guards/optional-jwt-auth.guard';
 
 @Controller('community')
 export class CommunityController {
@@ -19,14 +20,16 @@ export class CommunityController {
     return this.communityService.create(req.user, createCommunityRequestDto);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get()
-  findAll() {
-    return this.communityService.findAll();
+  findAll(@Request() req: ReqWithUser, @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number, @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number) {
+    return this.communityService.findAll(page, limit, req.user);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.communityService.findOneByIdWithMemberCount(+id);
+  findOne(@Param('id') id: string, @Request() req: ReqWithUser) {
+    return this.communityService.findOneByIdWithMemberCount(+id, req.user);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -69,8 +72,14 @@ export class CommunityController {
     return this.communityService.getMemberList(+id, page, limit);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/posts')
-  getPosts(@Param('id') id: string, @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number, @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number) {
-    return this.communityService.getPostList(+id, page, limit);
+  getPosts(
+    @Param('id') id: string,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Request() req: ReqWithUser
+  ) {
+    return this.communityService.getPostList(+id, page, limit, req.user);
   }
 }

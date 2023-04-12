@@ -5,6 +5,7 @@ import { ReqWithUser } from 'src/auth/interface/auth.interface';
 import JwtAuthGuard from 'src/auth/guards/jwt-auth.guard';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { InteractPostRequestDto } from './dto/interact-post.dto';
+import OptionalJwtAuthGuard from 'src/auth/guards/optional-jwt-auth.guard';
 
 @Controller('post')
 export class PostController {
@@ -17,9 +18,10 @@ export class PostController {
     return this.postService.create(createPostRequestDto, req.user, files.assets);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.postService.findOne(+id);
+  findOne(@Param('id') id: string, @Request() req: ReqWithUser) {
+    return this.postService.findOne(+id, req.user);
   }
 
   @UseGuards(JwtAuthGuard)

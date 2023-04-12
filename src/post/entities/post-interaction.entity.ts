@@ -1,5 +1,6 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 import { TABLE } from '../../helpers/enum/table.enum';
+import { Post } from './post.entity';
 
 export enum PostInteractionType {
   UPVOTE = 'upvote',
@@ -26,4 +27,8 @@ export class PostInteraction {
     default: PostInteractionType.UPVOTE
   })
   type: PostInteractionType;
+
+  @OneToOne(() => Post, post => post.interactions)
+  @JoinColumn({ name: 'post_id' })
+  post: Post;
 }

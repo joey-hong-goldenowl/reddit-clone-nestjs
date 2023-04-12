@@ -11,7 +11,7 @@ import { UploadApiResponse } from 'cloudinary';
 import { PostAsset } from './entities/post-asset.entity';
 import { Asset } from 'src/asset/entities/asset.entity';
 import { InteractPostRequestDto } from './dto/interact-post.dto';
-import { PostInteraction } from './entities/post-interaction.entity';
+import { PostInteraction, PostInteractionType } from './entities/post-interaction.entity';
 
 @Injectable()
 export class PostService {
@@ -70,7 +70,7 @@ export class PostService {
       const newPost = this.postRepository.create({
         title: createPostRequestDto.title,
         body_text: createPostRequestDto.body_text,
-        community_id: createPostRequestDto.community_id,
+        community_id: Number(createPostRequestDto.community_id),
         type: createPostRequestDto.type,
         owner: user
       });
@@ -83,20 +83,51 @@ export class PostService {
         const postAssetRecords = this.postAssetRepository.create(postAssets);
         await this.postAssetRepository.save(postAssetRecords);
       }
-      return this.findOne(addedPost.id);
+      return this.findOne(addedPost.id, user);
     } catch (error) {
       throw new InternalServerErrorException();
     }
   }
 
-  findOne(id: number) {
-    return this.postRepository
+  async findOne(id: number, user?: User) {
+    const foundPost = await this.postRepository.findOneBy({ id });
+    if (!foundPost) {
+      throw new NotFoundException(`Post doesn't exist`);
+    }
+
+    const post = await this.postRepository
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.assets', 'assets')
       .leftJoinAndSelect('post.owner', 'owner')
       .leftJoinAndSelect('assets.details', 'details')
+      .leftJoinAndSelect('post.interactions', 'interactions')
       .where('post.id = :postId', { postId: id })
       .getOne();
+
+    const upvote_interactions = post.interactions.filter(interaction => interaction.type === PostInteractionType.UPVOTE);
+    const downvote_interactions = post.interactions.filter(interaction => interaction.type === PostInteractionType.DOWNVOTE);
+
+    const upvote_count = upvote_interactions.length;
+    const downvote_count = downvote_interactions.length;
+    const is_upvoted = upvote_interactions.findIndex(interaction => interaction.user_id === user?.id) !== -1;
+    const is_downvoted = downvote_interactions.findIndex(interaction => interaction.user_id === user?.id) !== -1;
+
+    return {
+      ...post,
+      community_id: Number(post.community_id),
+      is_upvoted,
+      is_downvoted,
+      interactions: [
+        {
+          type: PostInteractionType.UPVOTE,
+          count: upvote_count
+        },
+        {
+          type: PostInteractionType.DOWNVOTE,
+          count: downvote_count
+        }
+      ]
+    };
   }
 
   async remove(id: number, user: User) {

@@ -10,6 +10,7 @@ import { UpdateCommunityRequestDto } from './dto/update-community.dto';
 import { Community } from './entities/community.entity';
 import { CommunityMember, MemberRole } from './entities/community_member.entity';
 import { Post } from 'src/post/entities/post.entity';
+import { PostInteractionType } from 'src/post/entities/post-interaction.entity';
 
 @Injectable()
 export class CommunityService {
@@ -49,8 +50,34 @@ export class CommunityService {
     return addedCommunity;
   }
 
-  findAll() {
-    return this.communityRepository.find();
+  async findAll(page: number, limit: number, user?: User) {
+    if (page < 1) page = 1;
+    const skip = (page - 1) * limit;
+    const qb = await this.communityRepository
+      .createQueryBuilder('community')
+      .leftJoinAndSelect('community.avatar', 'avatar')
+      .leftJoinAndSelect('community.banner', 'banner')
+      .leftJoinAndSelect('community.owner', 'owner')
+      .leftJoinAndSelect('community.members', 'members')
+      .loadRelationCountAndMap('community.member_count', 'community.members')
+      .take(limit)
+      .skip(skip);
+
+    const communityList = await qb.getMany();
+    const communityListResponse = communityList.map(community => {
+      const userJoinedCommunity = community.members?.findIndex(member => member.user_id === user?.id) !== -1;
+      delete community.members;
+      return {
+        ...community,
+        joined: userJoinedCommunity
+      };
+    });
+    const total = await qb.getCount();
+    return {
+      list: communityListResponse,
+      total,
+      count: communityListResponse.length
+    };
   }
 
   async findOne(id: number) {
@@ -274,7 +301,7 @@ export class CommunityService {
     return member;
   }
 
-  async getPostList(communityId: number, page: number, limit: number) {
+  async getPostList(communityId: number, page: number, limit: number, user?: User) {
     if (page < 1) page = 1;
     const community = await this.communityRepository.findOneBy({ id: communityId });
     if (!community) {
@@ -286,31 +313,66 @@ export class CommunityService {
       .leftJoinAndSelect('post.assets', 'assets')
       .leftJoinAndSelect('post.owner', 'owner')
       .leftJoinAndSelect('assets.details', 'details')
+      .leftJoinAndSelect('post.interactions', 'interactions')
       .where('post.community_id = :communityId', { communityId })
       .take(limit)
       .skip(skip);
 
     const list = await qb.getMany();
+    const listResponse = list.map(post => {
+      const upvote_interactions = post.interactions.filter(interaction => interaction.type === PostInteractionType.UPVOTE);
+      const downvote_interactions = post.interactions.filter(interaction => interaction.type === PostInteractionType.DOWNVOTE);
+
+      const upvote_count = upvote_interactions.length;
+      const downvote_count = downvote_interactions.length;
+      const is_upvoted = upvote_interactions.findIndex(interaction => interaction.user_id === user?.id) !== -1;
+      const is_downvoted = downvote_interactions.findIndex(interaction => interaction.user_id === user?.id) !== -1;
+      return {
+        ...post,
+        community_id: Number(post.community_id),
+        is_upvoted,
+        is_downvoted,
+        interactions: [
+          {
+            type: PostInteractionType.UPVOTE,
+            count: upvote_count
+          },
+          {
+            type: PostInteractionType.DOWNVOTE,
+            count: downvote_count
+          }
+        ]
+      };
+    });
     const total = await qb.getCount();
     return {
-      list,
+      list: listResponse,
       total,
-      count: list.length
+      count: listResponse.length
     };
   }
 
-  async findOneByIdWithMemberCount(communityId: number) {
+  async findOneByIdWithMemberCount(communityId: number, user?: User) {
     const community = await this.communityRepository.findOneBy({ id: communityId });
     if (!community) {
       throw new NotFoundException(`Community doesn't exist`);
     }
-    return this.communityRepository
+
+    const responseCommunity = await this.communityRepository
       .createQueryBuilder('community')
       .leftJoinAndSelect('community.avatar', 'avatar')
       .leftJoinAndSelect('community.banner', 'banner')
       .leftJoinAndSelect('community.owner', 'owner')
+      .leftJoinAndSelect('community.members', 'members')
       .loadRelationCountAndMap('community.member_count', 'community.members')
       .where('community.id = :communityId', { communityId })
       .getOne();
+
+    const userJoinedCommunity = responseCommunity.members?.findIndex(member => member.user_id === user?.id) !== -1;
+    delete responseCommunity.members;
+    return {
+      ...responseCommunity,
+      joined: userJoinedCommunity
+    };
   }
 }

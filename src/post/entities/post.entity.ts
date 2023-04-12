@@ -2,6 +2,7 @@ import { User } from '../../user/entities/user.entity';
 import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { PostAsset } from './post-asset.entity';
 import { TABLE } from '../../helpers/enum/table.enum';
+import { PostInteraction } from './post-interaction.entity';
 
 export enum PostType {
   TEXT = 'text',
@@ -42,4 +43,7 @@ export class Post {
 
   @OneToMany(() => PostAsset, postAsset => postAsset.post)
   assets?: PostAsset[];
+
+  @OneToMany(() => PostInteraction, postInteraction => postInteraction.post)
+  interactions: PostInteraction[];
 }
