@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, Request, UseGuards, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Request, UseGuards, UseInterceptors, UploadedFiles, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
 import { PostService } from './post.service';
 import { CreatePostRequestDto } from './dto/create-post.dto';
 import { ReqWithUser } from 'src/auth/interface/auth.interface';
@@ -34,5 +34,10 @@ export class PostController {
   @Post(':id/interaction')
   interactPost(@Request() req: ReqWithUser, @Param('id') id: string, @Body() interactPostRequestDto: InteractPostRequestDto) {
     return this.postService.interactPost(+id, req.user, interactPostRequestDto);
+  }
+
+  @Get(':id/comments')
+  getComments(@Param('id') id: string, @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number, @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number) {
+    return this.postService.getComments(+id, page, limit);
   }
 }

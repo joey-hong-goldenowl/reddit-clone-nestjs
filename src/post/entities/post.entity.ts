@@ -3,6 +3,7 @@ import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, Prim
 import { PostAsset } from './post-asset.entity';
 import { TABLE } from '../../helpers/enum/table.enum';
 import { PostInteraction } from './post-interaction.entity';
+import { Comment } from '../../comment/entities/comment.entity';
 
 export enum PostType {
   TEXT = 'text',
@@ -46,4 +47,7 @@ export class Post {
 
   @OneToMany(() => PostInteraction, postInteraction => postInteraction.post)
   interactions: PostInteraction[];
+
+  @OneToMany(() => Comment, comment => comment.post)
+  comments: Comment[];
 }

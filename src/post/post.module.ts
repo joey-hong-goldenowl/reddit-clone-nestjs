@@ -8,9 +8,10 @@ import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 import { AssetModule } from 'src/asset/asset.module';
 import { CommunityModule } from 'src/community/community.module';
 import { PostInteraction } from './entities/post-interaction.entity';
+import { Comment } from 'src/comment/entities/comment.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Post, PostAsset, PostInteraction]), CloudinaryModule, AssetModule, CommunityModule],
+  imports: [TypeOrmModule.forFeature([Post, PostAsset, PostInteraction, Comment]), CloudinaryModule, AssetModule, CommunityModule],
   controllers: [PostController],
   providers: [PostService],
   exports: [PostService]

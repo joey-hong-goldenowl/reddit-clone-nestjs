@@ -12,6 +12,7 @@ import { PostAsset } from './entities/post-asset.entity';
 import { Asset } from 'src/asset/entities/asset.entity';
 import { InteractPostRequestDto } from './dto/interact-post.dto';
 import { PostInteraction, PostInteractionType } from './entities/post-interaction.entity';
+import { Comment } from 'src/comment/entities/comment.entity';
 
 @Injectable()
 export class PostService {
@@ -22,6 +23,8 @@ export class PostService {
     private postAssetRepository: Repository<PostAsset>,
     @InjectRepository(PostInteraction)
     private postInteractionRepository: Repository<PostInteraction>,
+    @InjectRepository(Comment)
+    private commentRepository: Repository<Comment>,
     private readonly cloudinaryService: CloudinaryService,
     private readonly assetService: AssetService,
     private readonly communityService: CommunityService
@@ -101,6 +104,7 @@ export class PostService {
       .leftJoinAndSelect('post.owner', 'owner')
       .leftJoinAndSelect('assets.details', 'details')
       .leftJoinAndSelect('post.interactions', 'interactions')
+      .loadRelationCountAndMap('post.comment_count', 'post.comments')
       .where('post.id = :postId', { postId: id })
       .getOne();
 
@@ -177,7 +181,6 @@ export class PostService {
   }
 
   async interactPost(postId: number, user: User, interactPostRequestDto: InteractPostRequestDto) {
-    console.log(interactPostRequestDto);
     const { remove_interaction = false } = interactPostRequestDto;
     const post = await this.postRepository.findOneBy({ id: postId });
     if (!post) {
@@ -214,5 +217,28 @@ export class PostService {
       type: interactPostRequestDto.type
     });
     return this.postInteractionRepository.save(newInteraction);
+  }
+
+  async getComments(postId: number, page: number, limit: number) {
+    if (page < 1) page = 1;
+
+    await this.findOne(postId);
+
+    const skip = (page - 1) * limit;
+    const qb = this.commentRepository
+      .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.owner', 'owner')
+      .where('comment.post_id = :postId', { postId })
+      .take(limit)
+      .skip(skip);
+
+    const list = await qb.getMany();
+    const total = await qb.getCount();
+
+    return {
+      list,
+      total,
+      count: list.length
+    };
   }
 }

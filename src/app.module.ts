@@ -9,6 +9,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { AssetModule } from './asset/asset.module';
 import { CommunityModule } from './community/community.module';
 import { PostModule } from './post/post.module';
+import { CommentModule } from './comment/comment.module';
 
 @Module({
   imports: [
@@ -31,7 +32,8 @@ import { PostModule } from './post/post.module';
     CloudinaryModule,
     AssetModule,
     CommunityModule,
-    PostModule
+    PostModule,
+    CommentModule
   ]
 })
 export class AppModule {}

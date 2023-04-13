@@ -5,5 +5,7 @@ export enum TABLE {
   COMMUNITY_MEMBERS = 'community_members',
   POSTS = 'posts',
   POST_ASSETS = 'post_assets',
-  POST_INTERACTIONS = 'post_interactions'
+  POST_INTERACTIONS = 'post_interactions',
+  COMMENTS = 'comments',
+  COMMENT_INTERACTIONS = 'comment_interactions'
 }
