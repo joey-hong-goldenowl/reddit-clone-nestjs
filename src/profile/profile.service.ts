@@ -86,7 +86,8 @@ export class ProfileService {
 
   async updatePassword(user: User, updatePasswordRequestDto: UpdatePasswordRequestDto) {
     const { password, newPassword, confirmNewPassword } = updatePasswordRequestDto;
-    const isMatchWithCurrentPassword = await bcrypt.compare(password, user.password);
+    const userWithPassword = await this.userService.findOneByEmailWithPassword(user.email)
+    const isMatchWithCurrentPassword = await bcrypt.compare(password, userWithPassword.password);
 
     if (!isMatchWithCurrentPassword) {
       throw new BadRequestException("Old password doesn't match");
@@ -105,15 +106,20 @@ export class ProfileService {
 
   async updateEmail(user: User, updateEmailRequestDto: UpdateEmailRequestDto) {
     const { newEmail, password } = updateEmailRequestDto;
-    const isMatchWithCurrentPassword = await bcrypt.compare(password, user.password);
 
-    if (!isMatchWithCurrentPassword) {
-      throw new BadRequestException("Password doesn't match");
+    if (user.email === newEmail) {
+      throw new BadRequestException('New email must be diffrent')
     }
 
-    const otherUser = await this.userService.findOneByEmail(newEmail);
-    if (otherUser) {
+    const userWithSameEmail = await this.userService.findOneByEmail(newEmail);
+    if (userWithSameEmail) {
       throw new BadRequestException('Email not available to use');
+    }
+
+    const userWithPassword = await this.userService.findOneByEmailWithPassword(user.email)
+    const isMatchWithCurrentPassword = await bcrypt.compare(password, userWithPassword.password);
+    if (!isMatchWithCurrentPassword) {
+      throw new BadRequestException("Password doesn't match");
     }
 
     return this.userService.updateEmail(user, newEmail);

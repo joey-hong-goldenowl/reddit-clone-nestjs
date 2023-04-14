@@ -66,10 +66,12 @@ export class CommunityService {
     const communityList = await qb.getMany();
     const communityListResponse = communityList.map(community => {
       const userJoinedCommunity = community.members?.findIndex(member => member.user_id === user?.id) !== -1;
+      const isOwnerOfCommunity = community.owner.id === user?.id
       delete community.members;
       return {
         ...community,
-        joined: userJoinedCommunity
+        joined: userJoinedCommunity,
+        isOwner: isOwnerOfCommunity,
       };
     });
     const total = await qb.getCount();
@@ -293,7 +295,9 @@ export class CommunityService {
   async findMember(user: User, communityId: number) {
     const member = await this.communityMemberRepository.findOneBy({
       community_id: communityId,
-      user_id: user.id
+      user: {
+        id: user.id
+      }
     });
     if (!member) {
       throw new NotFoundException('User is not in this community');
@@ -369,10 +373,12 @@ export class CommunityService {
       .getOne();
 
     const userJoinedCommunity = responseCommunity.members?.findIndex(member => member.user_id === user?.id) !== -1;
+    const isOwnerOfCommunity = responseCommunity.owner.id === user?.id
     delete responseCommunity.members;
     return {
       ...responseCommunity,
-      joined: userJoinedCommunity
+      joined: userJoinedCommunity,
+      isOwner: isOwnerOfCommunity,
     };
   }
 }
