@@ -6,12 +6,16 @@ import { User } from 'src/user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Comment } from './entities/comment.entity';
 import { Repository } from 'typeorm';
+import { InteractCommentRequestDto } from './dto/interact-comment.dto';
+import { CommentInteraction } from './entities/comment-interaction.entity';
 
 @Injectable()
 export class CommentService {
   constructor(
     @InjectRepository(Comment)
     private commentRepository: Repository<Comment>,
+    @InjectRepository(CommentInteraction)
+    private commentInteractionRepository: Repository<CommentInteraction>,
     private readonly postService: PostService
   ) {}
 
@@ -66,5 +70,42 @@ export class CommentService {
 
   isOwnerOfComment(userId: number, comment: Comment) {
     return comment.user_id === userId;
+  }
+
+  async interactComment(commentId: number, user: User, interactCommentRequestDto: InteractCommentRequestDto) {
+    await this.findOne(commentId);
+
+    const { remove_interaction = false, type } = interactCommentRequestDto;
+    const interaction = await this.commentInteractionRepository.findOneBy({ user_id: user.id, comment_id: commentId });
+    if (interaction) {
+      if (remove_interaction) {
+        await this.commentInteractionRepository.delete({
+          comment_id: commentId,
+          user_id: user.id
+        });
+        return { success: true };
+      }
+
+      await this.commentInteractionRepository.update(
+        {
+          comment_id: commentId,
+          user_id: user.id
+        },
+        {
+          type
+        }
+      );
+      return this.commentInteractionRepository.findOneBy({ user_id: user.id, comment_id: commentId });
+    }
+
+    if (remove_interaction) {
+      throw new NotFoundException();
+    }
+    const newInteraction = this.commentInteractionRepository.create({
+      comment_id: commentId,
+      user_id: user.id,
+      type
+    });
+    return this.commentInteractionRepository.save(newInteraction);
   }
 }

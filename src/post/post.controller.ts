@@ -31,13 +31,19 @@ export class PostController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post(':id/interaction')
+  @Post(':id/interact')
   interactPost(@Request() req: ReqWithUser, @Param('id') id: string, @Body() interactPostRequestDto: InteractPostRequestDto) {
     return this.postService.interactPost(+id, req.user, interactPostRequestDto);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/comments')
-  getComments(@Param('id') id: string, @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number, @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number) {
-    return this.postService.getComments(+id, page, limit);
+  getComments(
+    @Param('id') id: string,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Request() req: ReqWithUser
+  ) {
+    return this.postService.getComments(+id, page, limit, req.user);
   }
 }

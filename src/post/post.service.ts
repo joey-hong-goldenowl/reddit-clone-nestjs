@@ -13,6 +13,7 @@ import { Asset } from 'src/asset/entities/asset.entity';
 import { InteractPostRequestDto } from './dto/interact-post.dto';
 import { PostInteraction, PostInteractionType } from './entities/post-interaction.entity';
 import { Comment } from 'src/comment/entities/comment.entity';
+import { CommentInteractionType } from 'src/comment/entities/comment-interaction.entity';
 
 @Injectable()
 export class PostService {
@@ -219,7 +220,7 @@ export class PostService {
     return this.postInteractionRepository.save(newInteraction);
   }
 
-  async getComments(postId: number, page: number, limit: number) {
+  async getComments(postId: number, page: number, limit: number, user?: User) {
     if (page < 1) page = 1;
 
     await this.findOne(postId);
@@ -228,17 +229,42 @@ export class PostService {
     const qb = this.commentRepository
       .createQueryBuilder('comment')
       .leftJoinAndSelect('comment.owner', 'owner')
+      .leftJoinAndSelect('comment.interactions', 'interactions')
       .where('comment.post_id = :postId', { postId })
       .take(limit)
       .skip(skip);
 
     const list = await qb.getMany();
+    const responseList = list.map(comment => {
+      const upvote_interactions = comment.interactions.filter(interaction => interaction.type === CommentInteractionType.UPVOTE);
+      const downvote_interactions = comment.interactions.filter(interaction => interaction.type === CommentInteractionType.DOWNVOTE);
+
+      const upvote_count = upvote_interactions.length;
+      const downvote_count = downvote_interactions.length;
+      const is_upvoted = upvote_interactions.findIndex(interaction => interaction.user_id === user?.id) !== -1;
+      const is_downvoted = downvote_interactions.findIndex(interaction => interaction.user_id === user?.id) !== -1;
+      return {
+        ...comment,
+        is_upvoted,
+        is_downvoted,
+        interactions: [
+          {
+            type: CommentInteractionType.UPVOTE,
+            count: upvote_count
+          },
+          {
+            type: CommentInteractionType.DOWNVOTE,
+            count: downvote_count
+          }
+        ]
+      };
+    });
     const total = await qb.getCount();
 
     return {
-      list,
+      list: responseList,
       total,
-      count: list.length
+      count: responseList.length
     };
   }
 }

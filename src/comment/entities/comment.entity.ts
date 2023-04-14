@@ -1,7 +1,8 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { TABLE } from '../../helpers/enum/table.enum';
 import { User } from '../../user/entities/user.entity';
 import { Post } from '../../post/entities/post.entity';
+import { CommentInteraction } from './comment-interaction.entity';
 
 @Entity(TABLE.COMMENTS)
 export class Comment {
@@ -30,4 +31,7 @@ export class Comment {
   @OneToOne(() => Post)
   @JoinColumn({ name: 'post_id' })
   post: Post;
+
+  @OneToMany(() => CommentInteraction, commentInteraction => commentInteraction.comment)
+  interactions: CommentInteraction[];
 }

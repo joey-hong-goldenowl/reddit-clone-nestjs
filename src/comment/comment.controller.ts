@@ -4,6 +4,7 @@ import { CreateCommentRequestDto } from './dto/create-comment.dto';
 import { UpdateCommentRequestDto } from './dto/update-comment.dto';
 import JwtAuthGuard from 'src/auth/guards/jwt-auth.guard';
 import { ReqWithUser } from 'src/auth/interface/auth.interface';
+import { InteractCommentRequestDto } from './dto/interact-comment.dto';
 
 @Controller('comment')
 export class CommentController {
@@ -30,5 +31,11 @@ export class CommentController {
   @Delete(':id')
   remove(@Param('id') id: string, @Request() req: ReqWithUser) {
     return this.commentService.remove(+id, req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/interact')
+  interactComment(@Param('id') id: string, @Body() interactCommentRequestDto: InteractCommentRequestDto, @Request() req: ReqWithUser) {
+    return this.commentService.interactComment(+id, req.user, interactCommentRequestDto);
   }
 }
