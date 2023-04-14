@@ -66,12 +66,12 @@ export class CommunityService {
     const communityList = await qb.getMany();
     const communityListResponse = communityList.map(community => {
       const userJoinedCommunity = community.members?.findIndex(member => member.user_id === user?.id) !== -1;
-      const isOwnerOfCommunity = community.owner.id === user?.id
+      const isOwnerOfCommunity = community.owner.id === user?.id;
       delete community.members;
       return {
         ...community,
         joined: userJoinedCommunity,
-        isOwner: isOwnerOfCommunity,
+        isOwner: isOwnerOfCommunity
       };
     });
     const total = await qb.getCount();
@@ -217,6 +217,21 @@ export class CommunityService {
 
   findAllOwned(userId: number) {
     return this.communityRepository.findBy({ owner: { id: userId } });
+  }
+
+  async findAllJoined(userId: number) {
+    const communityList = await this.communityRepository
+      .createQueryBuilder('community')
+      .leftJoinAndSelect('community.avatar', 'avatar')
+      .leftJoinAndSelect('community.members', 'members')
+      .getMany();
+
+    return communityList
+      .filter(community => community.members?.findIndex(member => member.user_id === userId) !== -1)
+      .map(community => {
+        delete community.members;
+        return community;
+      });
   }
 
   async isOwnerOfCommunity(user: User, communityId: number) {
@@ -373,12 +388,12 @@ export class CommunityService {
       .getOne();
 
     const userJoinedCommunity = responseCommunity.members?.findIndex(member => member.user_id === user?.id) !== -1;
-    const isOwnerOfCommunity = responseCommunity.owner.id === user?.id
+    const isOwnerOfCommunity = responseCommunity.owner.id === user?.id;
     delete responseCommunity.members;
     return {
       ...responseCommunity,
       joined: userJoinedCommunity,
-      isOwner: isOwnerOfCommunity,
+      isOwner: isOwnerOfCommunity
     };
   }
 }

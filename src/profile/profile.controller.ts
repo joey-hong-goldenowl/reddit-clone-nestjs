@@ -42,8 +42,14 @@ export class ProfileController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('community')
+  @Get('owned_community')
   getOwnedCommunities(@Request() req: ReqWithUser) {
     return this.communityService.findAllOwned(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('joined_community')
+  getJoinedCommunities(@Request() req: ReqWithUser) {
+    return this.communityService.findAllJoined(req.user.id)
   }
 }
