@@ -9,6 +9,8 @@ import RolesGuard from './guards/roles.guard';
 import { MemberRole } from './entities/community_member.entity';
 import Roles from './decorators/roles.decorator';
 import OptionalJwtAuthGuard from 'src/auth/guards/optional-jwt-auth.guard';
+import { POST_FILTER } from 'src/helpers/enum/filter.enum';
+import { PostFilterValidationPipe } from './pipes/post.pipe';
 
 @Controller('community')
 export class CommunityController {
@@ -78,8 +80,9 @@ export class CommunityController {
     @Param('id') id: string,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('filter', new DefaultValuePipe(POST_FILTER.new), PostFilterValidationPipe) filter: POST_FILTER,
     @Request() req: ReqWithUser
   ) {
-    return this.communityService.getPostList(+id, page, limit, req.user);
+    return this.communityService.getPostList(+id, filter, page, limit, req.user);
   }
 }

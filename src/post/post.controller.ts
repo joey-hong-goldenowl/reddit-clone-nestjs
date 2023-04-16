@@ -23,12 +23,12 @@ export class PostController {
   @UseGuards(OptionalJwtAuthGuard)
   @Get('news_feed')
   getNewsFeed(
-    @Query('filter', new DefaultValuePipe(NEWS_FEED_FILTER.NEW), NewsFeedFilterValidationPipe) filter: NEWS_FEED_FILTER,
+    @Query('filter', new DefaultValuePipe(NEWS_FEED_FILTER.new), NewsFeedFilterValidationPipe) filter: NEWS_FEED_FILTER,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Request() req: ReqWithUser
   ) {
-    if (filter === NEWS_FEED_FILTER.NEW) {
+    if (filter === NEWS_FEED_FILTER.new) {
       return this.postService.getNewsFeed(page, limit, req.user);
     } else {
       return this.postService.getPopularNewsFeed(page, limit, req.user);

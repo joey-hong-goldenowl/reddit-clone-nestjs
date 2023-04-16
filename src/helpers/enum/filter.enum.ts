@@ -1,4 +1,9 @@
 export enum NEWS_FEED_FILTER {
-  NEW = 'new',
-  POPULAR = 'popular'
+  new = 'new',
+  popular = 'popular'
+}
+
+export enum POST_FILTER {
+  new = 'new',
+  top = 'top'
 }

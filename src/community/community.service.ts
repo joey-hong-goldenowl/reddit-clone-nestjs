@@ -11,6 +11,7 @@ import { Community } from './entities/community.entity';
 import { CommunityMember, MemberRole } from './entities/community_member.entity';
 import { Post } from 'src/post/entities/post.entity';
 import { PostInteractionType } from 'src/post/entities/post-interaction.entity';
+import { POST_FILTER } from 'src/helpers/enum/filter.enum';
 
 @Injectable()
 export class CommunityService {
@@ -320,7 +321,7 @@ export class CommunityService {
     return member;
   }
 
-  async getPostList(communityId: number, page: number, limit: number, user?: User) {
+  async getPostList(communityId: number, filter: POST_FILTER, page: number, limit: number, user?: User) {
     if (page < 1) page = 1;
     const community = await this.communityRepository.findOneBy({ id: communityId });
     if (!community) {
@@ -333,12 +334,29 @@ export class CommunityService {
       .leftJoinAndSelect('post.owner', 'owner')
       .leftJoinAndSelect('assets.details', 'details')
       .leftJoinAndSelect('post.interactions', 'interactions')
-      .where('post.community_id = :communityId', { communityId })
-      .take(limit)
-      .skip(skip);
+      .where('post.community_id = :communityId', { communityId });
 
-    const list = await qb.getMany();
-    const listResponse = list.map(post => {
+    if (filter === POST_FILTER.new) {
+      qb.orderBy('post.created_at', 'DESC').take(limit).skip(skip);
+    }
+
+    let list = await qb.getMany();
+    if (filter === POST_FILTER.top) {
+      list = list
+        .sort((a, b) => {
+          const a_upvote_count = a.interactions.filter(interaction => interaction.type === PostInteractionType.UPVOTE).length;
+          const a_downvote_count = a.interactions.filter(interaction => interaction.type === PostInteractionType.DOWNVOTE).length;
+          const b_upvote_count = b.interactions.filter(interaction => interaction.type === PostInteractionType.UPVOTE).length;
+          const b_downvote_count = b.interactions.filter(interaction => interaction.type === PostInteractionType.DOWNVOTE).length;
+          const a_interaction_point = a_upvote_count - a_downvote_count;
+          const b_interaction_point = b_upvote_count - b_downvote_count;
+          if (a_interaction_point > b_interaction_point) return -1;
+          if (b_interaction_point < b_interaction_point) return 1;
+          return 0;
+        })
+        .slice(skip, skip + limit);
+    }
+    list = list.map(post => {
       const upvote_interactions = post.interactions.filter(interaction => interaction.type === PostInteractionType.UPVOTE);
       const downvote_interactions = post.interactions.filter(interaction => interaction.type === PostInteractionType.DOWNVOTE);
 
@@ -365,9 +383,9 @@ export class CommunityService {
     });
     const total = await qb.getCount();
     return {
-      list: listResponse,
+      list,
       total,
-      count: listResponse.length
+      count: list.length
     };
   }
 
