@@ -356,7 +356,7 @@ export class CommunityService {
         })
         .slice(skip, skip + limit);
     }
-    list = list.map(post => {
+    const responseList = list.map(post => {
       const upvote_interactions = post.interactions.filter(interaction => interaction.type === PostInteractionType.UPVOTE);
       const downvote_interactions = post.interactions.filter(interaction => interaction.type === PostInteractionType.DOWNVOTE);
 
@@ -383,9 +383,9 @@ export class CommunityService {
     });
     const total = await qb.getCount();
     return {
-      list,
+      list: responseList,
       total,
-      count: list.length
+      count: responseList.length
     };
   }
 
