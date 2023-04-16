@@ -6,6 +6,8 @@ import JwtAuthGuard from 'src/auth/guards/jwt-auth.guard';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { InteractPostRequestDto } from './dto/interact-post.dto';
 import OptionalJwtAuthGuard from 'src/auth/guards/optional-jwt-auth.guard';
+import { NEWS_FEED_FILTER } from 'src/helpers/enum/filter.enum';
+import { NewsFeedFilterValidationPipe } from './pipes/post.pipe';
 
 @Controller('post')
 export class PostController {
@@ -16,6 +18,21 @@ export class PostController {
   @Post()
   create(@Body() createPostRequestDto: CreatePostRequestDto, @Request() req: ReqWithUser, @UploadedFiles() files: { assets?: Express.Multer.File[] }) {
     return this.postService.create(createPostRequestDto, req.user, files.assets);
+  }
+
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get('news_feed')
+  getNewsFeed(
+    @Query('filter', new DefaultValuePipe(NEWS_FEED_FILTER.NEW), NewsFeedFilterValidationPipe) filter: NEWS_FEED_FILTER,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Request() req: ReqWithUser
+  ) {
+    if (filter === NEWS_FEED_FILTER.NEW) {
+      return this.postService.getNewsFeed(page, limit, req.user);
+    } else {
+      return this.postService.getPopularNewsFeed(page, limit, req.user);
+    }
   }
 
   @UseGuards(OptionalJwtAuthGuard)

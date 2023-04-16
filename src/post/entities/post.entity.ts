@@ -4,6 +4,7 @@ import { PostAsset } from './post-asset.entity';
 import { TABLE } from '../../helpers/enum/table.enum';
 import { PostInteraction } from './post-interaction.entity';
 import { Comment } from '../../comment/entities/comment.entity';
+import { Community } from 'src/community/entities/community.entity';
 
 export enum PostType {
   TEXT = 'text',
@@ -28,6 +29,10 @@ export class Post {
 
   @Column('bigint')
   community_id: number;
+
+  @OneToOne(() => Community)
+  @JoinColumn({ name: 'community_id' })
+  community: Community;
 
   @Column({
     type: 'enum',
