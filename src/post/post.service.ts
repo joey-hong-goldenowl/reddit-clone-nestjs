@@ -138,14 +138,16 @@ export class PostService {
 
   async remove(id: number, user: User) {
     const post = await this.postRepository.findOne({
-      where: { id },
+      where: {
+        id,
+        owner: {
+          id: user.id
+        }
+      },
       relations: ['assets']
     });
     if (!post) {
       throw new NotFoundException(`Post doesn't exist`);
-    }
-    if (post.owner.id !== user.id) {
-      throw new ForbiddenException();
     }
     try {
       const { assets = [], type } = post;
@@ -335,13 +337,81 @@ export class PostService {
     }
     if (page < 1) page = 1;
     const skip = (page - 1) * limit;
-    const qb = this.postRepository
+    const list = await this.postRepository.query(`
+      SELECT p.*,
+             to_json(u.*) as owner,
+             to_json(c.*) as community,
+             p_a.asset_array as assets,
+             p_i.interaction_array as interactions
+      FROM (
+        SELECT *
+        FROM posts
+        WHERE created_at > '${format(sub(new Date(), { days: 7 }), 'yyyy-MM-dd hh:mm:ss')}'
+      ) p
+      LEFT JOIN (
+        SELECT u.id,
+               u.username,
+               u.email,
+               to_json(u_a.*) as avatar
+        FROM users u
+        LEFT JOIN assets u_a
+        ON u.avatar_asset_id = u_a.id
+      ) u
+      ON p.owner_id = u.id
+      LEFT JOIN communities c
+      ON p.community_id = c.id
+      LEFT JOIN (
+        SELECT p_a.post_id as post_id,
+               jsonb_agg(to_jsonb(a)) as asset_array
+        FROM post_assets p_a
+        LEFT JOIN assets a
+        ON p_a.asset_id = a.id
+        GROUP  BY p_a.post_id
+      ) p_a
+      ON p_a.post_id = p.id
+      LEFT JOIN (
+        SELECT p_i.post_id as post_id,
+               jsonb_agg(to_jsonb(p_i)) as interaction_array,
+               COUNT(p_i.*) filter (where p_i.type = 'upvote') AS upvote_count
+        FROM post_interactions p_i
+        GROUP  BY p_i.post_id
+      ) p_i
+      ON p_i.post_id = p.id
+      ORDER BY p_i.upvote_Count DESC NULLS LAST
+      LIMIT ${limit}
+      OFFSET ${skip}
+    `);
+
+    const listResponse = list.map(post => {
+      const upvote_interactions = post.interactions?.filter(interaction => interaction.type === PostInteractionType.UPVOTE) ?? [];
+      const downvote_interactions = post.interactions?.filter(interaction => interaction.type === PostInteractionType.DOWNVOTE) ?? [];
+
+      const upvote_count = upvote_interactions.length;
+      const downvote_count = downvote_interactions.length;
+      const is_upvoted = upvote_interactions.findIndex(interaction => interaction.user_id === user?.id) !== -1;
+      const is_downvoted = downvote_interactions.findIndex(interaction => interaction.user_id === user?.id) !== -1;
+
+      return {
+        ...post,
+        community_id: Number(post.community_id),
+        is_upvoted,
+        is_downvoted,
+        interactions: [
+          {
+            type: PostInteractionType.UPVOTE,
+            count: upvote_count
+          },
+          {
+            type: PostInteractionType.DOWNVOTE,
+            count: downvote_count
+          }
+        ],
+        joinedCommunity: joinedCommunity.includes(post.community_id)
+      };
+    });
+
+    const total = await this.postRepository
       .createQueryBuilder('post')
-      .leftJoinAndSelect('post.assets', 'assets')
-      .leftJoinAndSelect('post.owner', 'owner')
-      .leftJoinAndSelect('assets.details', 'details')
-      .leftJoinAndSelect('post.interactions', 'interactions')
-      .leftJoinAndSelect('post.community', 'community')
       .where('post.created_at > :date', {
         date: format(
           sub(new Date(), {
@@ -349,45 +419,56 @@ export class PostService {
           }),
           'yyyy-MM-dd hh:mm:ss'
         )
-      });
+      })
+      .getCount();
+    return {
+      list: listResponse,
+      total,
+      count: listResponse.length
+    };
+  }
+
+  async search(searchKey: string, page: number, limit: number, user?: User) {
+    if (page < 1) page = 1;
+    const skip = (page - 1) * limit;
+    const qb = this.postRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.assets', 'assets')
+      .leftJoinAndSelect('post.owner', 'owner')
+      .leftJoinAndSelect('assets.details', 'details')
+      .leftJoinAndSelect('post.interactions', 'interactions')
+      .leftJoinAndSelect('post.community', 'community')
+      .where('post.title ILIKE :name', { name: `%${searchKey}%` })
+      .orderBy('post.created_at', 'DESC');
+
+    qb.take(limit).skip(skip);
 
     const list = await qb.getMany();
-    const listResponse = list
-      .sort((a, b) => {
-        const a_upvote_count = a.interactions.filter(interaction => interaction.type === PostInteractionType.UPVOTE).length;
-        const b_upvote_count = b.interactions.filter(interaction => interaction.type === PostInteractionType.UPVOTE).length;
-        if (a_upvote_count > b_upvote_count) return -1;
-        if (a_upvote_count < b_upvote_count) return 1;
-        return 0;
-      })
-      .slice(skip, skip + limit)
-      .map(post => {
-        const upvote_interactions = post.interactions.filter(interaction => interaction.type === PostInteractionType.UPVOTE);
-        const downvote_interactions = post.interactions.filter(interaction => interaction.type === PostInteractionType.DOWNVOTE);
+    const listResponse = list.map(post => {
+      const upvote_interactions = post.interactions.filter(interaction => interaction.type === PostInteractionType.UPVOTE);
+      const downvote_interactions = post.interactions.filter(interaction => interaction.type === PostInteractionType.DOWNVOTE);
 
-        const upvote_count = upvote_interactions.length;
-        const downvote_count = downvote_interactions.length;
-        const is_upvoted = upvote_interactions.findIndex(interaction => interaction.user_id === user?.id) !== -1;
-        const is_downvoted = downvote_interactions.findIndex(interaction => interaction.user_id === user?.id) !== -1;
-
-        return {
-          ...post,
-          community_id: Number(post.community_id),
-          is_upvoted,
-          is_downvoted,
-          interactions: [
-            {
-              type: PostInteractionType.UPVOTE,
-              count: upvote_count
-            },
-            {
-              type: PostInteractionType.DOWNVOTE,
-              count: downvote_count
-            }
-          ],
-          joinedCommunity: joinedCommunity.includes(post.community_id)
-        };
-      });
+      const upvote_count = upvote_interactions.length;
+      const downvote_count = downvote_interactions.length;
+      const is_upvoted = upvote_interactions.findIndex(interaction => interaction.user_id === user?.id) !== -1;
+      const is_downvoted = downvote_interactions.findIndex(interaction => interaction.user_id === user?.id) !== -1;
+      return {
+        ...post,
+        community_id: Number(post.community_id),
+        is_upvoted,
+        is_downvoted,
+        interactions: [
+          {
+            type: PostInteractionType.UPVOTE,
+            count: upvote_count
+          },
+          {
+            type: PostInteractionType.DOWNVOTE,
+            count: downvote_count
+          }
+        ]
+      };
+    });
     const total = await qb.getCount();
     return {
       list: listResponse,

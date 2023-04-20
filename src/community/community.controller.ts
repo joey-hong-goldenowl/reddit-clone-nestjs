@@ -28,6 +28,22 @@ export class CommunityController {
     return this.communityService.findAll(page, limit, req.user);
   }
 
+  @Get('search-recommendation')
+  searchRecommendations(@Query('search-key', new DefaultValuePipe('')) searchKey: string) {
+    return this.communityService.getRecommendations(searchKey);
+  }
+
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get('search')
+  search(
+    @Request() req: ReqWithUser,
+    @Query('search-key', new DefaultValuePipe('')) searchKey: string,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number
+  ) {
+    return this.communityService.search(searchKey, page, limit, req.user);
+  }
+
   @UseGuards(OptionalJwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req: ReqWithUser) {

@@ -4,7 +4,7 @@ import { UploadApiResponse } from 'cloudinary';
 import { AssetService } from 'src/asset/asset.service';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { User } from 'src/user/entities/user.entity';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { CreateCommunityRequestDto } from './dto/create-community.dto';
 import { UpdateCommunityRequestDto } from './dto/update-community.dto';
 import { Community } from './entities/community.entity';
@@ -54,7 +54,7 @@ export class CommunityService {
   async findAll(page: number, limit: number, user?: User) {
     if (page < 1) page = 1;
     const skip = (page - 1) * limit;
-    const qb = await this.communityRepository
+    const qb = this.communityRepository
       .createQueryBuilder('community')
       .leftJoinAndSelect('community.avatar', 'avatar')
       .leftJoinAndSelect('community.banner', 'banner')
@@ -412,6 +412,46 @@ export class CommunityService {
       ...responseCommunity,
       joined: userJoinedCommunity,
       isOwner: isOwnerOfCommunity
+    };
+  }
+
+  async getRecommendations(searchKey: string) {
+    return this.communityRepository.find({
+      where: {
+        name: ILike(`%${searchKey}%`)
+      },
+      relations: ['avatar'],
+      take: 5
+    });
+  }
+
+  async search(searchKey: string, page: number, limit: number, user?: User) {
+    if (page < 1) page = 1;
+    let joinedCommunity = [];
+    if (user) {
+      joinedCommunity = await this.findAllJoined(user?.id);
+      joinedCommunity = joinedCommunity.map(community => community.id);
+    }
+    const skip = (page - 1) * limit;
+    const qb = this.communityRepository
+      .createQueryBuilder('community')
+      .where('community.name ILIKE :name', { name: `%${searchKey}%` })
+      .take(limit)
+      .skip(skip);
+
+    const communityList = await qb.getMany();
+    const communityListResponse = communityList.map(community => {
+      return {
+        ...community,
+        joined: joinedCommunity.includes(community.id)
+      };
+    });
+    const total = await qb.getCount();
+
+    return {
+      list: communityListResponse,
+      total,
+      count: communityListResponse.length
     };
   }
 }
