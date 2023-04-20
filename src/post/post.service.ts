@@ -417,7 +417,7 @@ export class PostService {
       LEFT JOIN (
         SELECT p_i.post_id as post_id,
                jsonb_agg(to_jsonb(p_i)) as interaction_array,
-               COUNT(p_i.*) filter (where p_i.type = 'upvote') AS upvote_count
+               COUNT(p_i.*) filter (where p_i.type = '${PostInteractionType.UPVOTE}') AS upvote_count
         FROM post_interactions p_i
         GROUP  BY p_i.post_id
       ) p_i

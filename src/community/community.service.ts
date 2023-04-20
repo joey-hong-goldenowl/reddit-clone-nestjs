@@ -328,37 +328,64 @@ export class CommunityService {
       throw new NotFoundException(`Community doesn't exist`);
     }
     const skip = (page - 1) * limit;
-    const qb = this.postRepository
-      .createQueryBuilder('post')
-      .leftJoinAndSelect('post.assets', 'assets')
-      .leftJoinAndSelect('post.owner', 'owner')
-      .leftJoinAndSelect('assets.details', 'details')
-      .leftJoinAndSelect('post.interactions', 'interactions')
-      .where('post.community_id = :communityId', { communityId });
-
-    if (filter === POST_FILTER.new) {
-      qb.orderBy('post.created_at', 'DESC').take(limit).skip(skip);
-    }
-
-    let list = await qb.getMany();
-    if (filter === POST_FILTER.top) {
-      list = list
-        .sort((a, b) => {
-          const a_upvote_count = a.interactions.filter(interaction => interaction.type === PostInteractionType.UPVOTE).length;
-          const a_downvote_count = a.interactions.filter(interaction => interaction.type === PostInteractionType.DOWNVOTE).length;
-          const b_upvote_count = b.interactions.filter(interaction => interaction.type === PostInteractionType.UPVOTE).length;
-          const b_downvote_count = b.interactions.filter(interaction => interaction.type === PostInteractionType.DOWNVOTE).length;
-          const a_interaction_point = a_upvote_count - a_downvote_count;
-          const b_interaction_point = b_upvote_count - b_downvote_count;
-          if (a_interaction_point > b_interaction_point) return -1;
-          if (b_interaction_point < b_interaction_point) return 1;
-          return 0;
-        })
-        .slice(skip, skip + limit);
-    }
+    const list = await this.postRepository.query(`
+      SELECT p.*,
+             to_json(u.*) as owner,
+             to_json(c.*) as community,
+             p_a.asset_array as assets,
+             p_i.interaction_array as interactions
+      FROM (
+        SELECT *
+        FROM posts
+        WHERE community_id = ${communityId}
+      ) p
+      LEFT JOIN (
+        SELECT u.id,
+               u.username,
+               u.email,
+               to_json(u_a.*) as avatar
+        FROM users u
+        LEFT JOIN assets u_a
+        ON u.avatar_asset_id = u_a.id
+      ) u
+      ON p.owner_id = u.id
+      LEFT JOIN (
+        SELECT c.id,
+               c.name,
+               to_json(c_a.*) as avatar
+        FROM communities c
+        LEFT JOIN assets c_a
+        ON c.avatar_asset_id = c_a.id
+      ) c
+      ON p.community_id = c.id
+      LEFT JOIN (
+        SELECT p_a.post_id as post_id,
+               jsonb_agg(to_jsonb(a)) as asset_array
+        FROM post_assets p_a
+        LEFT JOIN assets a
+        ON p_a.asset_id = a.id
+        GROUP  BY p_a.post_id
+      ) p_a
+      ON p_a.post_id = p.id
+      LEFT JOIN (
+        SELECT p_i.post_id as post_id,
+               jsonb_agg(to_jsonb(p_i)) as interaction_array
+               ${
+                 filter === POST_FILTER.top
+                   ? `, COUNT(p_i.*) filter (where p_i.type = '${PostInteractionType.UPVOTE}') - COUNT(p_i.*) filter (where p_i.type = '${PostInteractionType.DOWNVOTE}') as interaction_point`
+                   : ''
+               }
+        FROM post_interactions p_i
+        GROUP  BY p_i.post_id
+      ) p_i
+      ON p_i.post_id = p.id
+      ORDER BY ${filter === POST_FILTER.top ? 'p_i.interaction_point' : 'p.created_at'} DESC NULLS LAST
+      LIMIT ${limit}
+      OFFSET ${skip}
+    `);
     const responseList = list.map(post => {
-      const upvote_interactions = post.interactions.filter(interaction => interaction.type === PostInteractionType.UPVOTE);
-      const downvote_interactions = post.interactions.filter(interaction => interaction.type === PostInteractionType.DOWNVOTE);
+      const upvote_interactions = post.interactions?.filter(interaction => interaction.type === PostInteractionType.UPVOTE) ?? [];
+      const downvote_interactions = post.interactions?.filter(interaction => interaction.type === PostInteractionType.DOWNVOTE) ?? [];
 
       const upvote_count = upvote_interactions.length;
       const downvote_count = downvote_interactions.length;
@@ -381,7 +408,7 @@ export class CommunityService {
         ]
       };
     });
-    const total = await qb.getCount();
+    const total = await this.postRepository.createQueryBuilder('post').where('post.community_id = :communityId', { communityId }).getCount();
     return {
       list: responseList,
       total,
