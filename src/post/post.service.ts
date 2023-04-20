@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreatePostRequestDto } from './dto/create-post.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Post, PostType } from './entities/post.entity';
@@ -358,7 +358,14 @@ export class PostService {
         ON u.avatar_asset_id = u_a.id
       ) u
       ON p.owner_id = u.id
-      LEFT JOIN communities c
+      LEFT JOIN (
+        SELECT c.id,
+               c.name,
+               to_json(c_a.*) as avatar
+        FROM communities c
+        LEFT JOIN assets c_a
+        ON c.avatar_asset_id = c_a.id
+      ) c
       ON p.community_id = c.id
       LEFT JOIN (
         SELECT p_a.post_id as post_id,
