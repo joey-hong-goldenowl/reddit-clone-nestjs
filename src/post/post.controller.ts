@@ -6,8 +6,9 @@ import JwtAuthGuard from 'src/auth/guards/jwt-auth.guard';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { InteractPostRequestDto } from './dto/interact-post.dto';
 import OptionalJwtAuthGuard from 'src/auth/guards/optional-jwt-auth.guard';
-import { NEWS_FEED_FILTER } from 'src/helpers/enum/filter.enum';
+import { NEWS_FEED_FILTER, POST_FILTER } from 'src/helpers/enum/filter.enum';
 import { NewsFeedFilterValidationPipe } from './pipes/post.pipe';
+import { PostFilterValidationPipe } from 'src/community/pipes/post.pipe';
 
 @Controller('post')
 export class PostController {
@@ -41,9 +42,10 @@ export class PostController {
     @Request() req: ReqWithUser,
     @Query('search-key', new DefaultValuePipe('')) searchKey: string,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('filter', new DefaultValuePipe(POST_FILTER.new), PostFilterValidationPipe) filter: POST_FILTER
   ) {
-    return this.postService.search(searchKey, page, limit, req.user);
+    return this.postService.search(searchKey, page, limit, filter, req.user);
   }
 
   @UseGuards(OptionalJwtAuthGuard)

@@ -462,6 +462,7 @@ export class CommunityService {
     const skip = (page - 1) * limit;
     const qb = this.communityRepository
       .createQueryBuilder('community')
+      .leftJoinAndSelect('community.avatar', 'avatar')
       .where('community.name ILIKE :name', { name: `%${searchKey}%` })
       .take(limit)
       .skip(skip);

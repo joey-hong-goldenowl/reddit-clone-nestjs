@@ -84,6 +84,12 @@ export class UserService {
   }
 
   async findOneByEmailWithPassword(email: string) {
-    return this.userRepository.createQueryBuilder('u').addSelect('u.password').where('email = :email', { email }).getOne();
+    return this.userRepository
+      .createQueryBuilder('u')
+      .addSelect('u.password')
+      .leftJoinAndSelect('u.avatar', 'avatar')
+      .leftJoinAndSelect('u.background', 'background')
+      .where('email = :email', { email })
+      .getOne();
   }
 }
