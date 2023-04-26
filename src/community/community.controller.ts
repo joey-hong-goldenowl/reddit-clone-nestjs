@@ -1,4 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, UseInterceptors, UploadedFiles, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+  UseInterceptors,
+  UploadedFiles,
+  Query,
+  DefaultValuePipe,
+  ParseIntPipe,
+  HttpCode
+} from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import JwtAuthGuard from 'src/auth/guards/jwt-auth.guard';
 import { ReqWithUser } from 'src/auth/interface/auth.interface';
@@ -79,6 +95,13 @@ export class CommunityController {
   @Post(':id/join')
   joinCommunity(@Param('id') id: string, @Request() req: ReqWithUser) {
     return this.communityService.joinCommunity(+id, req.user);
+  }
+
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/leave')
+  leaveCommunity(@Param('id') id: string, @Request() req: ReqWithUser) {
+    return this.communityService.leaveCommunity(+id, req.user);
   }
 
   @Get(':id/members')

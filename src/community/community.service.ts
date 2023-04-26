@@ -12,6 +12,7 @@ import { CommunityMember, MemberRole } from './entities/community_member.entity'
 import { Post } from 'src/post/entities/post.entity';
 import { PostInteractionType } from 'src/post/entities/post-interaction.entity';
 import { POST_FILTER } from 'src/helpers/enum/filter.enum';
+import { paginatedResponse } from 'src/helpers/utils/response';
 
 @Injectable()
 export class CommunityService {
@@ -76,11 +77,7 @@ export class CommunityService {
       };
     });
     const total = await qb.getCount();
-    return {
-      list: communityListResponse,
-      total,
-      count: communityListResponse.length
-    };
+    return paginatedResponse(communityListResponse, total, page, limit);
   }
 
   async findOne(id: number) {
@@ -265,6 +262,10 @@ export class CommunityService {
   }
 
   async joinCommunity(communityId: number, user: User) {
+    const community = await this.communityRepository.findOneBy({ id: communityId });
+    if (!community) {
+      throw new NotFoundException('Community not found');
+    }
     const communityMember = await this.communityMemberRepository.findOneBy({
       community_id: communityId,
       user: {
@@ -279,6 +280,32 @@ export class CommunityService {
       user_id: user.id
     });
     return this.communityMemberRepository.save(newCommunityMember);
+  }
+
+  async leaveCommunity(communityId: number, user: User) {
+    const communityMember = await this.communityMemberRepository.findOneBy({
+      community_id: communityId,
+      user: {
+        id: user.id
+      }
+    });
+    if (communityMember) {
+      if (communityMember.role === MemberRole.OWNER) {
+        throw new BadRequestException('Owner cannot leave their community');
+      } else {
+        await this.communityMemberRepository.delete({
+          community_id: communityId,
+          user: {
+            id: user.id
+          }
+        });
+        return {
+          success: true
+        };
+      }
+    } else {
+      throw new NotFoundException('User is not in this community');
+    }
   }
 
   async getMemberList(communityId: number, page: number, limit: number) {
@@ -301,11 +328,7 @@ export class CommunityService {
 
     const list = await qb.getMany();
     const total = await qb.getCount();
-    return {
-      list,
-      total,
-      count: list.length
-    };
+    return paginatedResponse(list, total, page, limit);
   }
 
   async findMember(user: User, communityId: number) {
@@ -409,11 +432,7 @@ export class CommunityService {
       };
     });
     const total = await this.postRepository.createQueryBuilder('post').where('post.community_id = :communityId', { communityId }).getCount();
-    return {
-      list: responseList,
-      total,
-      count: responseList.length
-    };
+    return paginatedResponse(responseList, total, page, limit);
   }
 
   async findOneByIdWithMemberCount(communityId: number, user?: User) {
@@ -476,10 +495,16 @@ export class CommunityService {
     });
     const total = await qb.getCount();
 
-    return {
-      list: communityListResponse,
-      total,
-      count: communityListResponse.length
-    };
+    return paginatedResponse(communityListResponse, total, page, limit);
+  }
+
+  async userHasJoinedCommunity(communityId: number, user: User) {
+    const communityMember = await this.communityMemberRepository.findOneBy({
+      community_id: communityId,
+      user: {
+        id: user.id
+      }
+    });
+    return communityMember !== null;
   }
 }

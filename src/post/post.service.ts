@@ -16,6 +16,7 @@ import { Comment } from 'src/comment/entities/comment.entity';
 import { CommentInteractionType } from 'src/comment/entities/comment-interaction.entity';
 import { format, sub } from 'date-fns';
 import { POST_FILTER } from 'src/helpers/enum/filter.enum';
+import { paginatedResponse } from 'src/helpers/utils/response';
 
 @Injectable()
 export class PostService {
@@ -38,6 +39,10 @@ export class PostService {
     const community = await this.communityService.findOneById(community_id);
     if (!community) {
       throw new NotFoundException(`Community doesn't exist`);
+    }
+    const userHasJoinedCommunity = this.communityService.userHasJoinedCommunity(community_id, user);
+    if (!userHasJoinedCommunity) {
+      throw new NotFoundException('User not in community');
     }
     try {
       let addedAssets: Asset[] = null;
@@ -265,11 +270,7 @@ export class PostService {
     });
     const total = await qb.getCount();
 
-    return {
-      list: responseList,
-      total,
-      count: responseList.length
-    };
+    return paginatedResponse(responseList, total, page, limit);
   }
 
   async getNewsFeed(page: number, limit: number, user?: User) {
@@ -361,11 +362,7 @@ export class PostService {
       qb.where('post.community_id IN (:...joinedCommunity)', { joinedCommunity });
     }
     const total = await qb.getCount();
-    return {
-      list: listResponse,
-      total,
-      count: listResponse.length
-    };
+    return paginatedResponse(listResponse, total, page, limit);
   }
 
   async getPopularNewsFeed(page: number, limit: number, user?: User) {
@@ -467,11 +464,7 @@ export class PostService {
         )
       })
       .getCount();
-    return {
-      list: listResponse,
-      total,
-      count: listResponse.length
-    };
+    return paginatedResponse(listResponse, total, page, limit);
   }
 
   async search(searchKey: string, page: number, limit: number, filter: POST_FILTER, user?: User) {
@@ -561,10 +554,6 @@ export class PostService {
       .createQueryBuilder('post')
       .where('post.title ILIKE :name', { name: `%${searchKey}%` })
       .getCount();
-    return {
-      list: listResponse,
-      total,
-      count: listResponse.length
-    };
+    return paginatedResponse(listResponse, total, page, limit);
   }
 }
