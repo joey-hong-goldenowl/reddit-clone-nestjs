@@ -4,6 +4,7 @@ import { RegisterRequestDto } from './dto/register.dto';
 import JwtAuthGuard from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { ReqWithUser } from './interface/auth.interface';
+import { RegisterDeviceRequestDto } from './dto/register-device.dto';
 
 @Controller('auth')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -31,5 +32,11 @@ export class AuthController {
   @Get('me')
   getMe(@Req() request: ReqWithUser) {
     return request.user;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('register_device')
+  registerDevice(@Req() request: ReqWithUser, @Body() registerDeviceRequestDto: RegisterDeviceRequestDto) {
+    return this.authService.registerDevice(request.user, registerDeviceRequestDto);
   }
 }

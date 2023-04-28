@@ -50,4 +50,8 @@ export class User {
 
   @OneToOne(() => CommunityMember, (communityMember: CommunityMember) => communityMember.user)
   public member_info: CommunityMember;
+
+  @Column({ type: 'text', select: false })
+  @Exclude({ toPlainOnly: true })
+  onesignal_player_id: string;
 }

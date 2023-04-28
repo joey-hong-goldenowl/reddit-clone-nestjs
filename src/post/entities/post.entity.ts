@@ -4,7 +4,7 @@ import { PostAsset } from './post-asset.entity';
 import { TABLE } from '../../helpers/enum/table.enum';
 import { PostInteraction } from './post-interaction.entity';
 import { Comment } from '../../comment/entities/comment.entity';
-import { Community } from 'src/community/entities/community.entity';
+import { Community } from '../../community/entities/community.entity';
 
 export enum PostType {
   TEXT = 'text',

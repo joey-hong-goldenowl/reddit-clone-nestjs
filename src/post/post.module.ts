@@ -9,9 +9,10 @@ import { AssetModule } from 'src/asset/asset.module';
 import { CommunityModule } from 'src/community/community.module';
 import { PostInteraction } from './entities/post-interaction.entity';
 import { Comment } from 'src/comment/entities/comment.entity';
+import { OnesignalModule } from 'src/onesignal/onesignal.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Post, PostAsset, PostInteraction, Comment]), CloudinaryModule, AssetModule, CommunityModule],
+  imports: [TypeOrmModule.forFeature([Post, PostAsset, PostInteraction, Comment]), CloudinaryModule, AssetModule, CommunityModule, OnesignalModule],
   controllers: [PostController],
   providers: [PostService],
   exports: [PostService]

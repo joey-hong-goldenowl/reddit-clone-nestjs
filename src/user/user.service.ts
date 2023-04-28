@@ -92,4 +92,27 @@ export class UserService {
       .where('email = :email', { email })
       .getOne();
   }
+
+  async updateOneSignalPlayerId(user: User, playerId: string) {
+    await this.userRepository.update(user.id, {
+      onesignal_player_id: playerId
+    });
+  }
+
+  async getUserOneSignalPlayerId(userId: number) {
+    const user = await this.userRepository.findOne({
+      select: {
+        id: true,
+        onesignal_player_id: true
+      },
+      where: {
+        id: userId
+      }
+    });
+
+    if (user !== null) {
+      return user.onesignal_player_id;
+    }
+    return null;
+  }
 }

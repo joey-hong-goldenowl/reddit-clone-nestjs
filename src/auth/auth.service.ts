@@ -6,6 +6,7 @@ import { User } from 'src/user/entities/user.entity';
 import { UserService } from 'src/user/user.service';
 import { RegisterRequestDto } from './dto/register.dto';
 import { TokenPayload } from './interface/auth.interface';
+import { RegisterDeviceRequestDto } from './dto/register-device.dto';
 
 @Injectable()
 export class AuthService {
@@ -46,5 +47,13 @@ export class AuthService {
     const payload: TokenPayload = { userId };
     const token = this.jwtService.sign(payload);
     return token;
+  }
+
+  async registerDevice(user: User, registerDeviceRequestDto: RegisterDeviceRequestDto) {
+    const { player_id } = registerDeviceRequestDto;
+    await this.userService.updateOneSignalPlayerId(user, player_id);
+    return {
+      success: true
+    };
   }
 }

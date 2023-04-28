@@ -8,6 +8,8 @@ import { Comment } from './entities/comment.entity';
 import { Repository } from 'typeorm';
 import { InteractCommentRequestDto } from './dto/interact-comment.dto';
 import { CommentInteraction } from './entities/comment-interaction.entity';
+import { OneSignalService } from 'src/onesignal/onesignal.service';
+import { generateCommentInteractionPushNotificationMessage } from 'src/helpers/utils/string';
 
 @Injectable()
 export class CommentService {
@@ -16,7 +18,8 @@ export class CommentService {
     private commentRepository: Repository<Comment>,
     @InjectRepository(CommentInteraction)
     private commentInteractionRepository: Repository<CommentInteraction>,
-    private readonly postService: PostService
+    private readonly postService: PostService,
+    private readonly oneSignalService: OneSignalService
   ) {}
 
   async create(createCommentRequestDto: CreateCommentRequestDto, user: User) {
@@ -73,7 +76,7 @@ export class CommentService {
   }
 
   async interactComment(commentId: number, user: User, interactCommentRequestDto: InteractCommentRequestDto) {
-    await this.findOne(commentId);
+    const comment = await this.findOne(commentId);
 
     const { remove_interaction = false, type } = interactCommentRequestDto;
     const interaction = await this.commentInteractionRepository.findOneBy({ user_id: user.id, comment_id: commentId });
@@ -95,6 +98,9 @@ export class CommentService {
           type
         }
       );
+      this.oneSignalService.createNotification(comment.user_id, generateCommentInteractionPushNotificationMessage(type, user.username), {
+        postId: comment.post_id
+      });
       return this.commentInteractionRepository.findOneBy({ user_id: user.id, comment_id: commentId });
     }
 
@@ -106,6 +112,10 @@ export class CommentService {
       user_id: user.id,
       type
     });
-    return this.commentInteractionRepository.save(newInteraction);
+    const savedInteraction = await this.commentInteractionRepository.save(newInteraction);
+    this.oneSignalService.createNotification(comment.user_id, generateCommentInteractionPushNotificationMessage(type, user.username), {
+      postId: comment.post_id
+    });
+    return savedInteraction;
   }
 }

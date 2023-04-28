@@ -17,6 +17,8 @@ import { CommentInteractionType } from 'src/comment/entities/comment-interaction
 import { format, sub } from 'date-fns';
 import { POST_FILTER } from 'src/helpers/enum/filter.enum';
 import { paginatedResponse } from 'src/helpers/utils/response';
+import { OneSignalService } from 'src/onesignal/onesignal.service';
+import { generatePostInteractionPushNotificationMessage } from 'src/helpers/utils/string';
 
 @Injectable()
 export class PostService {
@@ -31,7 +33,8 @@ export class PostService {
     private commentRepository: Repository<Comment>,
     private readonly cloudinaryService: CloudinaryService,
     private readonly assetService: AssetService,
-    private readonly communityService: CommunityService
+    private readonly communityService: CommunityService,
+    private readonly oneSignalService: OneSignalService
   ) {}
 
   async create(createPostRequestDto: CreatePostRequestDto, user: User, assets: Express.Multer.File[]) {
@@ -215,6 +218,9 @@ export class PostService {
           type: interactPostRequestDto.type
         }
       );
+      this.oneSignalService.createNotification(post.owner.id, generatePostInteractionPushNotificationMessage(interactPostRequestDto.type, user.username), {
+        postId
+      });
       return this.postInteractionRepository.findOneBy({ post_id: postId, user_id: user.id });
     }
 
@@ -226,7 +232,11 @@ export class PostService {
       user_id: user.id,
       type: interactPostRequestDto.type
     });
-    return this.postInteractionRepository.save(newInteraction);
+    const savedInteraction = await this.postInteractionRepository.save(newInteraction);
+    this.oneSignalService.createNotification(post.owner.id, generatePostInteractionPushNotificationMessage(interactPostRequestDto.type, user.username), {
+      postId
+    });
+    return savedInteraction;
   }
 
   async getComments(postId: number, page: number, limit: number, user?: User) {

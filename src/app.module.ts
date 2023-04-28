@@ -10,6 +10,7 @@ import { AssetModule } from './asset/asset.module';
 import { CommunityModule } from './community/community.module';
 import { PostModule } from './post/post.module';
 import { CommentModule } from './comment/comment.module';
+import { OnesignalModule } from './onesignal/onesignal.module';
 
 @Module({
   imports: [
@@ -33,7 +34,8 @@ import { CommentModule } from './comment/comment.module';
     AssetModule,
     CommunityModule,
     PostModule,
-    CommentModule
+    CommentModule,
+    OnesignalModule
   ]
 })
 export class AppModule {}
