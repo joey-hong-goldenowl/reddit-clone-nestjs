@@ -83,7 +83,7 @@ export class AuthService {
   async registerWithGoogle(email: string) {
     await this.userService.createWithGoogle(email);
     const user = await this.userService.findOneByEmail(email);
-    this.loginWithGoogle(user);
+    return this.loginWithGoogle(user);
   }
 
   async loginWithGoogle(user: User) {
