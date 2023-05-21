@@ -126,5 +126,6 @@ export class PostMigration1680950613954 implements MigrationInterface {
     const ownerForeignKey = postsTable.foreignKeys.find(fk => fk.columnNames.indexOf('owner_id') !== -1);
     await queryRunner.dropForeignKeys(TABLE.POSTS, [communityForeignKey, ownerForeignKey]);
     await queryRunner.dropTable(TABLE.POSTS);
+    await queryRunner.query('DROP TYPE postTypeEnum');
   }
 }

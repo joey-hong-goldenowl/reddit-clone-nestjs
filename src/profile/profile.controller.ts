@@ -7,6 +7,8 @@ import { UpdateEmailRequestDto } from './dto/update-email.dto';
 import { UpdatePasswordRequestDto } from './dto/update-password.dto';
 import { UpdateProfileRequestDto } from './dto/update-profile.dto';
 import { ProfileService } from './profile.service';
+import { UpdateUsernameRequestDto } from './dto/update-username.dto';
+import { CheckUsernameAvailableRequestDto } from './dto/check-username-available.dto';
 
 @Controller('profile')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -50,6 +52,17 @@ export class ProfileController {
   @UseGuards(JwtAuthGuard)
   @Get('joined_community')
   getJoinedCommunities(@Request() req: ReqWithUser) {
-    return this.communityService.findAllJoined(req.user.id)
+    return this.communityService.findAllJoined(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('username')
+  updateUsername(@Request() req: ReqWithUser, @Body() updateUsernameRequestDto: UpdateUsernameRequestDto) {
+    return this.profileService.updateUsername(req.user, updateUsernameRequestDto);
+  }
+
+  @Patch('username-avaiable')
+  usernameAvailable(@Body() checkUsernameAvailableRequestDto: CheckUsernameAvailableRequestDto) {
+    return this.profileService.checkUsernameAvailability(checkUsernameAvailableRequestDto);
   }
 }

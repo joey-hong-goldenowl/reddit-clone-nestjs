@@ -8,6 +8,8 @@ import { UserService } from 'src/user/user.service';
 import { UpdateEmailRequestDto } from './dto/update-email.dto';
 import { UpdatePasswordRequestDto } from './dto/update-password.dto';
 import { UpdateProfileRequestDto } from './dto/update-profile.dto';
+import { UpdateUsernameRequestDto } from './dto/update-username.dto';
+import { CheckUsernameAvailableRequestDto } from './dto/check-username-available.dto';
 
 @Injectable()
 export class ProfileService {
@@ -86,7 +88,7 @@ export class ProfileService {
 
   async updatePassword(user: User, updatePasswordRequestDto: UpdatePasswordRequestDto) {
     const { password, newPassword, confirmNewPassword } = updatePasswordRequestDto;
-    const userWithPassword = await this.userService.findOneByEmailWithPassword(user.email)
+    const userWithPassword = await this.userService.findOneByEmailWithPassword(user.email);
     const isMatchWithCurrentPassword = await bcrypt.compare(password, userWithPassword.password);
 
     if (!isMatchWithCurrentPassword) {
@@ -108,7 +110,7 @@ export class ProfileService {
     const { newEmail, password } = updateEmailRequestDto;
 
     if (user.email === newEmail) {
-      throw new BadRequestException('New email must be diffrent')
+      throw new BadRequestException('New email must be diffrent');
     }
 
     const userWithSameEmail = await this.userService.findOneByEmail(newEmail);
@@ -116,12 +118,30 @@ export class ProfileService {
       throw new BadRequestException('Email not available to use');
     }
 
-    const userWithPassword = await this.userService.findOneByEmailWithPassword(user.email)
+    const userWithPassword = await this.userService.findOneByEmailWithPassword(user.email);
     const isMatchWithCurrentPassword = await bcrypt.compare(password, userWithPassword.password);
     if (!isMatchWithCurrentPassword) {
       throw new BadRequestException("Password doesn't match");
     }
 
     return this.userService.updateEmail(user, newEmail);
+  }
+
+  async updateUsername(user: User, updateUsernameRequestDto: UpdateUsernameRequestDto) {
+    const { username } = updateUsernameRequestDto;
+    const userWithSameUsername = await this.userService.findOneByUsername(username);
+    if (userWithSameUsername) {
+      throw new BadRequestException('Username is already in use');
+    }
+
+    return this.userService.updateUsername(user, username);
+  }
+
+  async checkUsernameAvailability(checkUsernameAvailableRequestDto: CheckUsernameAvailableRequestDto) {
+    const { username } = checkUsernameAvailableRequestDto;
+    const user = await this.userService.findOneByUsername(username);
+    return {
+      available: user === null
+    };
   }
 }

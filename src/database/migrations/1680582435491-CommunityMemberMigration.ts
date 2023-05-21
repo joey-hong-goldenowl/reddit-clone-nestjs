@@ -61,5 +61,6 @@ export class CommunityMemberMigration1680582435491 implements MigrationInterface
     const userForeignKey = communityMembersTable.foreignKeys.find(fk => fk.columnNames.indexOf('user_id') !== -1);
     await queryRunner.dropForeignKeys(TABLE.COMMUNITY_MEMBERS, [communityForeignKey, userForeignKey]);
     await queryRunner.dropTable(TABLE.COMMUNITY_MEMBERS);
+    await queryRunner.query('DROP TYPE memberRoleEnum');
   }
 }

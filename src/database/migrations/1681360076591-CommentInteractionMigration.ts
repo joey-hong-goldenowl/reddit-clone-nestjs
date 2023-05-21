@@ -61,5 +61,6 @@ export class CommentInteractionMigration1681360076591 implements MigrationInterf
     const userForeignKey = commentInteractionsTable.foreignKeys.find(fk => fk.columnNames.indexOf('user_id') !== -1);
     await queryRunner.dropForeignKeys(TABLE.COMMENT_INTERACTIONS, [commentForeignKey, userForeignKey]);
     await queryRunner.dropTable(TABLE.COMMENT_INTERACTIONS);
+    await queryRunner.query('DROP TYPE commentInteractionTypeEnum');
   }
 }

@@ -7,6 +7,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
+import { GoogleModule } from 'src/google/google.module';
 
 @Module({
   controllers: [AuthController],
@@ -24,7 +25,8 @@ import { LocalStrategy } from './strategies/local.strategy';
           expiresIn: configService.get('JWT_EXPIRATION_TIME')
         }
       })
-    })
+    }),
+    GoogleModule
   ]
 })
 export class AuthModule {}

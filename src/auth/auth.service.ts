@@ -1,16 +1,23 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { User } from 'src/user/entities/user.entity';
+import { User, UserLoginType } from 'src/user/entities/user.entity';
 import { UserService } from 'src/user/user.service';
 import { RegisterRequestDto } from './dto/register.dto';
 import { TokenPayload } from './interface/auth.interface';
 import { RegisterDeviceRequestDto } from './dto/register-device.dto';
+import { GoogleAuthenticateRequestDto } from './dto/google-authenticate.dto';
+import { GoogleService } from 'src/google/google.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly userService: UserService, private readonly jwtService: JwtService, private readonly configService: ConfigService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+    private readonly googleService: GoogleService
+  ) {}
 
   async register(registerRequestDto: RegisterRequestDto): Promise<User> {
     const { email, username } = registerRequestDto;
@@ -54,6 +61,36 @@ export class AuthService {
     await this.userService.updateOneSignalPlayerId(user, player_id);
     return {
       success: true
+    };
+  }
+
+  async authenticateWithGoogle(googleAuthenticateRequestDto: GoogleAuthenticateRequestDto) {
+    const { token } = googleAuthenticateRequestDto;
+    const tokenInfo = await this.googleService.getTokenInfo(token);
+    const email = tokenInfo.email;
+
+    const user = await this.userService.findOneByEmail(email);
+    if (user !== null) {
+      if (user.login_type !== UserLoginType.GOOGLE) {
+        throw new UnauthorizedException();
+      }
+      return this.loginWithGoogle(user);
+    } else {
+      return this.registerWithGoogle(email);
+    }
+  }
+
+  async registerWithGoogle(email: string) {
+    await this.userService.createWithGoogle(email);
+    const user = await this.userService.findOneByEmail(email);
+    this.loginWithGoogle(user);
+  }
+
+  async loginWithGoogle(user: User) {
+    const token = this.getCookieWithJwtToken(user.id);
+    return {
+      token,
+      user
     };
   }
 }

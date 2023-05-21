@@ -11,6 +11,7 @@ import { CommunityModule } from './community/community.module';
 import { PostModule } from './post/post.module';
 import { CommentModule } from './comment/comment.module';
 import { OnesignalModule } from './onesignal/onesignal.module';
+import { GoogleModule } from './google/google.module';
 
 @Module({
   imports: [
@@ -23,7 +24,16 @@ import { OnesignalModule } from './onesignal/onesignal.module';
         POSTGRES_DB: Joi.string().required(),
         PORT: Joi.number(),
         JWT_SECRET_KEY: Joi.string().required(),
-        JWT_EXPIRATION_TIME: Joi.string().required()
+        JWT_EXPIRATION_TIME: Joi.string().required(),
+        GOOGLE_CLIENT_ID: Joi.string().required(),
+        GOOGLE_CLIENT_SECRET: Joi.string().required(),
+        ONESIGNAL_APP_ID: Joi.string().required(),
+        ONESIGNAL_API_KEY: Joi.string().required(),
+        ONESIGNAL_USER_AUTH_KEY: Joi.string().required(),
+        ENVIRONMENT: Joi.string().required(),
+        CLOUDINARY_CLOUD_NAME: Joi.string().required(),
+        CLOUDINARY_API_KEY: Joi.string().required(),
+        CLOUDINARY_API_SECRET: Joi.string().required()
       })
     }),
     DatabaseModule,
@@ -35,7 +45,8 @@ import { OnesignalModule } from './onesignal/onesignal.module';
     CommunityModule,
     PostModule,
     CommentModule,
-    OnesignalModule
+    OnesignalModule,
+    GoogleModule
   ]
 })
 export class AppModule {}

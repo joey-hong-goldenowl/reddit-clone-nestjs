@@ -61,5 +61,6 @@ export class PostUpvoteMigration1681037510586 implements MigrationInterface {
     const userForeignKey = postInteractionsTable.foreignKeys.find(fk => fk.columnNames.indexOf('user_id') !== -1);
     await queryRunner.dropForeignKeys(TABLE.POST_INTERACTIONS, [postForeignKey, userForeignKey]);
     await queryRunner.dropTable(TABLE.POST_INTERACTIONS);
+    await queryRunner.query('DROP TYPE postInteractionTypeEnum');
   }
 }

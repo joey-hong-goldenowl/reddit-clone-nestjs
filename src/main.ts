@@ -15,6 +15,7 @@ async function bootstrap() {
     defaultVersion: '1'
   });
   app.use(cookieParser());
+  app.enableCors();
   await app.listen(3000);
 }
 bootstrap();

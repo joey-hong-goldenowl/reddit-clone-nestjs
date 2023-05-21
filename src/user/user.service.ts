@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
+import { User, UserLoginType } from './entities/user.entity';
 import { InsertResult, Repository } from 'typeorm';
 import { RegisterRequestDto } from 'src/auth/dto/register.dto';
 import { UpdateProfileRequestDto } from 'src/profile/dto/update-profile.dto';
@@ -50,6 +50,13 @@ export class UserService {
   async updateEmail(user: User, newEmail: string) {
     await this.userRepository.update(user.id, {
       email: newEmail
+    });
+    return this.findOneById(user.id);
+  }
+
+  async updateUsername(user: User, newUsername: string) {
+    await this.userRepository.update(user.id, {
+      username: newUsername
     });
     return this.findOneById(user.id);
   }
@@ -114,5 +121,16 @@ export class UserService {
       return user.onesignal_player_id;
     }
     return null;
+  }
+
+  async createWithGoogle(email: string) {
+    const username = email.split('@')?.[0];
+    const newUser = this.userRepository.create({
+      email,
+      username,
+      display_name: username,
+      login_type: UserLoginType.GOOGLE
+    });
+    return this.userRepository.insert(newUser);
   }
 }

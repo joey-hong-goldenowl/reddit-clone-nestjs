@@ -5,6 +5,11 @@ import { TABLE } from '../../helpers/enum/table.enum';
 import { Asset } from '../../asset/entities/asset.entity';
 import { CommunityMember } from '../../community/entities/community_member.entity';
 
+export enum UserLoginType {
+  EMAIL = 'email',
+  GOOGLE = 'google'
+}
+
 @Entity(TABLE.USERS)
 export class User {
   @PrimaryGeneratedColumn()
@@ -37,7 +42,9 @@ export class User {
 
   @BeforeInsert()
   async hashPassword() {
-    this.password = await bcrypt.hash(this.password, 10);
+    if (this.password) {
+      this.password = await bcrypt.hash(this.password, 10);
+    }
   }
 
   @OneToOne(() => Asset, { eager: true })
@@ -54,4 +61,16 @@ export class User {
   @Column({ type: 'text', select: false })
   @Exclude({ toPlainOnly: true })
   onesignal_player_id: string;
+
+  @Column({
+    type: 'enum',
+    enum: UserLoginType,
+    default: UserLoginType.EMAIL
+  })
+  login_type: UserLoginType;
+
+  @Column({
+    type: 'boolean'
+  })
+  update_username: boolean;
 }
