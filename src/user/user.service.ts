@@ -5,6 +5,7 @@ import { InsertResult, Repository } from 'typeorm';
 import { RegisterRequestDto } from 'src/auth/dto/register.dto';
 import { UpdateProfileRequestDto } from 'src/profile/dto/update-profile.dto';
 import * as bcrypt from 'bcrypt';
+import { add, isAfter } from 'date-fns';
 
 @Injectable()
 export class UserService {
@@ -56,7 +57,8 @@ export class UserService {
 
   async updateUsername(user: User, newUsername: string) {
     await this.userRepository.update(user.id, {
-      username: newUsername
+      username: newUsername,
+      update_username: true,
     });
     return this.findOneById(user.id);
   }
@@ -132,5 +134,21 @@ export class UserService {
       login_type: UserLoginType.GOOGLE
     });
     return this.userRepository.insert(newUser);
+  }
+
+  async canUpdateUsername(userId: number) {
+    const user = await this.findOneById(userId)
+    const { created_at, login_type } = user
+    if (login_type === UserLoginType.EMAIL) return false
+
+    let hasUpdateUsername = user.update_username
+    if (!hasUpdateUsername && isAfter(new Date(), add(created_at, { days: 30 }))) {
+      hasUpdateUsername = true
+      await this.userRepository.update(user.id, {
+        update_username: true,
+      });
+    }
+
+    return !hasUpdateUsername
   }
 }

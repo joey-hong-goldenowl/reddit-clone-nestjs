@@ -10,6 +10,7 @@ import { UpdatePasswordRequestDto } from './dto/update-password.dto';
 import { UpdateProfileRequestDto } from './dto/update-profile.dto';
 import { UpdateUsernameRequestDto } from './dto/update-username.dto';
 import { CheckUsernameAvailableRequestDto } from './dto/check-username-available.dto';
+import { UserLoginType } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class ProfileService {
@@ -87,6 +88,7 @@ export class ProfileService {
   }
 
   async updatePassword(user: User, updatePasswordRequestDto: UpdatePasswordRequestDto) {
+    if (user.login_type === UserLoginType.GOOGLE) throw new BadRequestException()
     const { password, newPassword, confirmNewPassword } = updatePasswordRequestDto;
     const userWithPassword = await this.userService.findOneByEmailWithPassword(user.email);
     const isMatchWithCurrentPassword = await bcrypt.compare(password, userWithPassword.password);
@@ -107,6 +109,7 @@ export class ProfileService {
   }
 
   async updateEmail(user: User, updateEmailRequestDto: UpdateEmailRequestDto) {
+    if (user.login_type === UserLoginType.GOOGLE) throw new BadRequestException()
     const { newEmail, password } = updateEmailRequestDto;
 
     if (user.email === newEmail) {
@@ -128,6 +131,8 @@ export class ProfileService {
   }
 
   async updateUsername(user: User, updateUsernameRequestDto: UpdateUsernameRequestDto) {
+    const canUpdateUsername = await this.userService.canUpdateUsername(user.id)
+    if (!canUpdateUsername) throw new BadRequestException()
     const { username } = updateUsernameRequestDto;
     const userWithSameUsername = await this.userService.findOneByUsername(username);
     if (userWithSameUsername) {
@@ -143,5 +148,12 @@ export class ProfileService {
     return {
       available: user === null
     };
+  }
+
+  async canUpdateUsername(user: User) {
+    const canUpdateUsername = await this.userService.canUpdateUsername(user.id)
+    return {
+      can_update_username: canUpdateUsername,
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { Body, ClassSerializerInterceptor, Controller, Get, Patch, Request, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Get, HttpCode, Patch, Post, Request, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import JwtAuthGuard from 'src/auth/guards/jwt-auth.guard';
 import { ReqWithUser } from 'src/auth/interface/auth.interface';
@@ -44,13 +44,13 @@ export class ProfileController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('owned_community')
+  @Get('owned-community')
   getOwnedCommunities(@Request() req: ReqWithUser) {
     return this.communityService.findAllOwned(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('joined_community')
+  @Get('joined-community')
   getJoinedCommunities(@Request() req: ReqWithUser) {
     return this.communityService.findAllJoined(req.user.id);
   }
@@ -61,8 +61,16 @@ export class ProfileController {
     return this.profileService.updateUsername(req.user, updateUsernameRequestDto);
   }
 
-  @Patch('username-avaiable')
+  @HttpCode(200)
+  @Post('username-avaiable')
   usernameAvailable(@Body() checkUsernameAvailableRequestDto: CheckUsernameAvailableRequestDto) {
     return this.profileService.checkUsernameAvailability(checkUsernameAvailableRequestDto);
+  }
+
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  @Post('can-update-username')
+  canUpdateUsername(@Request() req: ReqWithUser) {
+    return this.profileService.canUpdateUsername(req.user);
   }
 }
